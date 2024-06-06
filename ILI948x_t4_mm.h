@@ -207,7 +207,7 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX
     bool _bTearingOn = false;
     uint16_t _tearingScanLine = 0;
 
-    int16_t _width, _height;
+    //int16_t _width, _height;
     int8_t  _dc, _cs, _rst;
 
     uint8_t _dummy;

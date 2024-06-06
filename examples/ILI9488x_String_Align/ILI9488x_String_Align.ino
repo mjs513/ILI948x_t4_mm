@@ -14,7 +14,7 @@ BL_DATUM = Bottom left
 BC_DATUM = Bottom centre
 BR_DATUM = Bottom right
 */
-
+#include <Teensy_Parallel_GFX.h>
 #include "ILI948x_t4_mm.h"
 #include <SPI.h>
 #include <ili9488_t3_font_Arial.h>

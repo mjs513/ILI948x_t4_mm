@@ -93,6 +93,7 @@ public:
   virtual void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color) {};
   virtual void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color) {};
   virtual void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {};
+  virtual void setRotation(uint8_t r) {};
 
 	// setClipRect() sets a clipping rectangle (relative to any set origin) for drawing to be limited to.
 	// Drawing is also restricted to the bounds of the display
@@ -139,7 +140,7 @@ public:
   void fillCircleHelper(int16_t x0, int16_t y0, int16_t r, uint8_t cornername, int16_t delta, uint16_t color);
   void drawTriangle(int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
   void fillTriangle ( int16_t x0, int16_t y0, int16_t x1, int16_t y1, int16_t x2, int16_t y2, uint16_t color);
-  
+
 
 	virtual size_t write(uint8_t);
 	virtual size_t write(const uint8_t *buffer, size_t size);

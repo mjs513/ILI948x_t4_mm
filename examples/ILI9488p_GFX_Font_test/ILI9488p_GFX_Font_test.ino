@@ -11,6 +11,7 @@
 
 
 #include <Adafruit_GFX.h>
+#include <Teensy_Parallel_GFX.h>
 
 #include <SPI.h>
 #include "ILI948x_t4_mm.h"
