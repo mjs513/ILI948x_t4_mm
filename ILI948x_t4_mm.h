@@ -5,14 +5,15 @@
 
 //#define ILI9481_1
 //#define ILI9481_2
-//#define ILI9486
-#define ILI9488
+#define ILI9486
+//#define ILI9488
 //#define R61529
 
 #include "Arduino.h"
 #include "FlexIO_t4.h"
 #include "DMAChannel.h"
 
+#include "Teensy_Parallel_GFX.h"
 
 #define SHIFTNUM 4 // number of shifters used (must be 1, 2, 4, or 8)
 #define SHIFTER_DMA_REQUEST 3 // only 0, 1, 2, 3 expected to work
@@ -96,7 +97,7 @@
 #define MADCTL_SS  0x02
 
 //MADCTL 0,1,2,3 for setting rotation and 4 for screenshot
-#if defined (ILI9488) || defined (ILI9486)
+#if defined (ILI9488) || defined (ILI9486) || defined(ILI9486_1) || defined(ILI9488_1)
 #define MADCTL_ARRAY { MADCTL_MX | MADCTL_BGR, MADCTL_MV | MADCTL_BGR, MADCTL_MY | MADCTL_BGR, MADCTL_MX | MADCTL_MY | MADCTL_MV | MADCTL_BGR, MADCTL_MY | MADCTL_MV | MADCTL_BGR } // ILI9488/9486
 #elif defined (ILI9481_1) || defined (ILI9481_2)
 #define MADCTL_ARRAY { MADCTL_BGR | MADCTL_SS, MADCTL_MV | MADCTL_BGR, MADCTL_BGR | MADCTL_GS, MADCTL_MV | MADCTL_BGR | MADCTL_SS | MADCTL_GS } // ILI9481
@@ -104,8 +105,10 @@
 #define MADCTL_ARRAY { MADCTL_RGB, MADCTL_MV | MADCTL_MX | MADCTL_RGB, MADCTL_RGB | MADCTL_GS | MADCTL_MX, MADCTL_MV | MADCTL_RGB | MADCTL_GS } // R61529
 #endif
 
+
 #ifdef __cplusplus
-class ILI948x_t4_mm {
+class ILI948x_t4_mm : public Teensy_Parallel_GFX
+{
   public:
     ILI948x_t4_mm(int8_t dc, int8_t cs = -1, int8_t rst = -1);
     void begin(uint8_t buad_div = 20);
@@ -139,10 +142,53 @@ class ILI948x_t4_mm {
     //void pushPixels24bitTearing(uint16_t * pcolors, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2 );
     void DMAerror();
 
+/**************************************************************/
+ 	uint16_t _previous_addr_x0 = 0xffff; 
+ 	uint16_t _previous_addr_x1 = 0xffff; 
+ 	uint16_t _previous_addr_y0 = 0xffff; 
+ 	uint16_t _previous_addr_y1 = 0xffff; 
+
+	void setAddr(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
+	  __attribute__((always_inline)) {
+      
+      uint8_t Command;
+      uint8_t CommandValue[4];
+	  	if ((x0 != _previous_addr_x0) || (x1 != _previous_addr_x1)) {
+      Command = 0x2A;
+      CommandValue[0U] = x0 >> 8U;
+      CommandValue[1U] = x0 & 0xFF;
+      CommandValue[2U] = x1 >> 8U;
+      CommandValue[3U] = x1 & 0xFF;
+      SglBeatWR_nPrm_8(Command, CommandValue, 4U);
+			_previous_addr_x0 = x0;
+			_previous_addr_x1 = x1;
+	  	}
+	  	if ((y0 != _previous_addr_y0) || (y1 != _previous_addr_y1)) {
+      Command = 0x2B;
+      CommandValue[0U] = y0 >> 8U;
+      CommandValue[1U] = y0 & 0xFF;
+      CommandValue[2U] = y1 >> 8U;
+      CommandValue[3U] = y1 & 0xFF;
+      SglBeatWR_nPrm_8(Command, CommandValue, 4U);
+			_previous_addr_y0 = y0;
+			_previous_addr_y1 = y1;
+		}
+	}
+  
+  void write16BitColor(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint16_t * pcolors, uint16_t count);
+  void write16BitColorDMA(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint16_t * pcolors, uint16_t count);
+
+	void drawPixel(int16_t x, int16_t y, uint16_t color);
+  void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);
+  void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);
+  void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
+  
     typedef void(*CBF)();
     CBF _callback;
     void onCompleteCB(CBF callback);
-    
+
+  protected:
+
   private:
 
   FlexIOHandler *pFlex;

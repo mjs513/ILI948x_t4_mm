@@ -5,13 +5,13 @@
 #error This library only supports the Teensy Micromod!
 #endif
 
-FLASHMEM ILI948x_t4_mm::ILI948x_t4_mm(int8_t dc, int8_t cs, int8_t rst) 
-{
-  
+
+FLASHMEM ILI948x_t4_mm::ILI948x_t4_mm(int8_t dc, int8_t cs, int8_t rst)
+    : Teensy_Parallel_GFX(_TFTWIDTH, _TFTHEIGHT)
+{ 
   _dc = dc;
   _cs = cs;
   _rst = rst;
-  
 }
 
 FLASHMEM void ILI948x_t4_mm::begin(uint8_t buad_div) 
@@ -70,6 +70,9 @@ FLASHMEM void ILI948x_t4_mm::begin(uint8_t buad_div)
   _width  = _TFTWIDTH;
   _height = _TFTHEIGHT;
 
+	setClipRect();
+	setOrigin();
+	setTextSize(1);
   
 }
 
@@ -193,6 +196,12 @@ FLASHMEM void ILI948x_t4_mm::setRotation(uint8_t r)
             _height = _TFTWIDTH;
             break;
 	}
+
+	setClipRect();
+	setOrigin();
+	
+	cursor_x = 0;
+	cursor_y = 0;
 
   SglBeatWR_nPrm_8(ILI9488_MADCTL, &MADCTL[_rotation], 1);
 }
@@ -1692,4 +1701,120 @@ void ILI948x_t4_mm::DMAerror(){
     Serial.print("DMA error: ");
     Serial.println(DMA_ES, HEX);
   } 
+}
+
+FASTRUN void ILI948x_t4_mm::write16BitColor(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint16_t * pcolors, uint16_t count)
+{
+  while(WR_DMATransferDone == false)
+  {
+    //Wait for any DMA transfers to complete
+  }
+  //uint32_t area = (x2-x1+1)*(y2-y1+1);
+  uint32_t area = count;
+  //if (!((_lastx1 == x1) && (_lastx2 == x2) && (_lasty1 == y1) && (_lasty2 == y2))) {
+  //  setAddrWindow( x1, y1, x2, y2);
+  //   _lastx1 = x1;  _lastx2 = x2;  _lasty1 = y1;  _lasty2 = y2;
+  //}
+  setAddr(x1, y1, x2, y2);
+  SglBeatWR_nPrm_16(ILI9488_RAMWR, pcolors, area);
+}
+
+FASTRUN void ILI948x_t4_mm::write16BitColorDMA(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint16_t * pcolors, uint16_t count)
+{
+  while(WR_DMATransferDone == false)
+  {
+    //Wait for any DMA transfers to complete
+  }
+  uint32_t area = count;
+  if (!((_lastx1 == x1) && (_lastx2 == x2) && (_lasty1 == y1) && (_lasty2 == y2))) {
+  setAddrWindow(x1, y1, x2, y2);
+     _lastx1 = x1;  _lastx2 = x2;  _lasty1 = y1;  _lasty2 = y2;
+  }
+
+  MulBeatWR_nPrm_DMA(ILI9488_RAMWR, pcolors, area);
+}
+
+// fill a rectangle
+void ILI948x_t4_mm::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
+{
+     
+	x+=_originx;
+	y+=_originy;
+
+/*
+	// Rectangular clipping (drawChar w/big text requires this)
+	if((x >= _displayclipx2) || (y >= _displayclipy2)) return;
+	if (((x+w) <= _displayclipx1) || ((y+h) <= _displayclipy1)) return;
+	if(x < _displayclipx1) {	w -= (_displayclipx1-x); x = _displayclipx1; 	}
+	if(y < _displayclipy1) {	h -= (_displayclipy1 - y); y = _displayclipy1; 	}
+	if((x + w - 1) >= _displayclipx2)  w = _displayclipx2  - x;
+	if((y + h - 1) >= _displayclipy2) h = _displayclipy2 - y;
+*/
+
+  uint16_t pcolors[w];
+  for(uint16_t j = 0; j < w; j++) pcolors[j] = color;
+  
+  //setAddr(x, y, x+w-1, y+h-1);
+  //for(y=h; y>0; y--) {
+	//		write16BitColor(color, w, true);
+
+		for(uint16_t j=h; j>0; j--) {
+      //setAddr(x, y-1, x+w-1, y+h-1);
+      write16BitColor(x, j+y, x+w-1, j+y+h-1, pcolors, w);
+    }
+}
+
+void ILI948x_t4_mm::drawPixel(int16_t x, int16_t y, uint16_t color) {
+	x += _originx;
+	y += _originy;
+	//if((x < _displayclipx1) ||(x >= _displayclipx2) || (y < _displayclipy1) || (y >= _displayclipy2)) return;
+
+		//setAddr(x, y, x, y);
+    uint16_t pcolors[1];
+    pcolors[0] = color;
+    //setAddr(x, y, x, y);
+		write16BitColor(x, y, x, y, pcolors, 1);
+
+}
+
+void ILI948x_t4_mm::drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color)
+{
+	x+=_originx;
+	y+=_originy;
+  /*
+	// Rectangular clipping
+	if((x < _displayclipx1) || (x >= _displayclipx2) || (y >= _displayclipy2)) return;
+	if(y < _displayclipy1) { h = h - (_displayclipy1 - y); y = _displayclipy1;}
+	if((y+h-1) >= _displayclipy2) h = _displayclipy2-y;
+	if(h<1) return;
+*/
+		//setAddr(x, y, x, y+h-1);
+		//write16BitColor(color,h, true);
+    //drawLine(x, y, x, y + h - 1, color);
+    uint16_t pcolors[h];
+    for(uint16_t j = 0; j < h; j++) pcolors[j] = color;
+    //setAddr(x, y, x, y);
+		write16BitColor(x, y, x, y + h - 1, pcolors, h);
+
+}
+
+void ILI948x_t4_mm::drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color)
+{
+	x+=_originx;
+	y+=_originy;
+/*
+	// Rectangular clipping
+	if((y < _displayclipy1) || (x >= _displayclipx2) || (y >= _displayclipy2)) return;
+	if(x<_displayclipx1) { w = w - (_displayclipx1 - x); x = _displayclipx1; }
+	if((x+w-1) >= _displayclipx2)  w = _displayclipx2-x;
+	if (w<1) return;
+*/
+
+		//setAddr(x, y, x+w-1, y);
+		//write16BitColor(color, w, true);
+    //drawLine(x, y, x + w - 1, y, color);
+    uint16_t pcolors[w];
+    for(uint16_t j = 0; j < w; j++) pcolors[j] = color;
+    //setAddr(x, y, x, y);
+		write16BitColor(x, y, x+w-1, y, pcolors, w);
 }
