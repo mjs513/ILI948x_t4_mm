@@ -1703,6 +1703,52 @@ void ILI948x_t4_mm::DMAerror(){
   } 
 }
 
+void ILI948x_t4_mm::writecommand_cont(uint8_t cmd)  {
+ while(WR_DMATransferDone == false)
+  {
+    //Wait for any DMA transfers to complete
+  }
+    FlexIO_Config_SnglBeat();
+    uint16_t buf;
+    /* Assert CS, RS pins */
+    CSLow();
+    DCLow();
+    //microSecondDelay();
+    
+    /* Write command index */
+    p->SHIFTBUF[0] = cmd;
+
+    /*Wait for transfer to be completed */
+    while(0 == (p->TIMSTAT & (1 << 0)))
+            {  
+            }
+    microSecondDelay();
+    /* De-assert RS pin */
+    DCHigh();
+    microSecondDelay();
+}
+
+void ILI948x_t4_mm::write16BitColor(uint16_t color) {
+    while(0 == (p->SHIFTSTAT & (1U << 0)))
+    {
+    }
+    p->SHIFTBUF[0] = color >> 8;
+
+    while(0 == (p->SHIFTSTAT & (1U << 0)))
+    {
+    }
+    p->SHIFTBUF[0] = color & 0xFF;
+}
+
+void ILI948x_t4_mm::endCommand() {
+    /*Wait for transfer to be completed */
+    while(0 == (p->TIMSTAT |= (1U << 0)))
+    {
+    }
+    microSecondDelay();
+    CSHigh();
+}
+
 FASTRUN void ILI948x_t4_mm::write16BitColor(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint16_t * pcolors, uint16_t count)
 {
   while(WR_DMATransferDone == false)
@@ -1718,6 +1764,9 @@ FASTRUN void ILI948x_t4_mm::write16BitColor(uint16_t x1, uint16_t y1, uint16_t x
   setAddr(x1, y1, x2, y2);
   SglBeatWR_nPrm_16(ILI9488_RAMWR, pcolors, area);
 }
+
+
+
 
 FASTRUN void ILI948x_t4_mm::write16BitColorDMA(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint16_t * pcolors, uint16_t count)
 {
@@ -1737,31 +1786,28 @@ FASTRUN void ILI948x_t4_mm::write16BitColorDMA(uint16_t x1, uint16_t y1, uint16_
 // fill a rectangle
 void ILI948x_t4_mm::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
 {
-     
-	x+=_originx;
-	y+=_originy;
+   
+  x+=_originx;
+  y+=_originy;
 
 /*
-	// Rectangular clipping (drawChar w/big text requires this)
-	if((x >= _displayclipx2) || (y >= _displayclipy2)) return;
-	if (((x+w) <= _displayclipx1) || ((y+h) <= _displayclipy1)) return;
-	if(x < _displayclipx1) {	w -= (_displayclipx1-x); x = _displayclipx1; 	}
-	if(y < _displayclipy1) {	h -= (_displayclipy1 - y); y = _displayclipy1; 	}
-	if((x + w - 1) >= _displayclipx2)  w = _displayclipx2  - x;
-	if((y + h - 1) >= _displayclipy2) h = _displayclipy2 - y;
+  // Rectangular clipping (drawChar w/big text requires this)
+  if((x >= _displayclipx2) || (y >= _displayclipy2)) return;
+  if (((x+w) <= _displayclipx1) || ((y+h) <= _displayclipy1)) return;
+  if(x < _displayclipx1) {  w -= (_displayclipx1-x); x = _displayclipx1;  }
+  if(y < _displayclipy1) {  h -= (_displayclipy1 - y); y = _displayclipy1;  }
+  if((x + w - 1) >= _displayclipx2)  w = _displayclipx2  - x;
+  if((y + h - 1) >= _displayclipy2) h = _displayclipy2 - y;
 */
 
-  uint16_t pcolors[w];
-  for(uint16_t j = 0; j < w; j++) pcolors[j] = color;
-  
-  //setAddr(x, y, x+w-1, y+h-1);
-  //for(y=h; y>0; y--) {
-	//		write16BitColor(color, w, true);
+  setAddr(x, y, x+w-1, y+h-1);
+  writecommand_cont(ILI9488_RAMWR);
+  uint32_t count_pixels = w * h;
+  while (count_pixels--) {
+    write16BitColor(color);
+  }
+  endCommand();
 
-		for(uint16_t j=h; j>0; j--) {
-      //setAddr(x, y-1, x+w-1, y+h-1);
-      write16BitColor(x, j+y, x+w-1, j+y+h-1, pcolors, w);
-    }
 }
 
 void ILI948x_t4_mm::drawPixel(int16_t x, int16_t y, uint16_t color) {

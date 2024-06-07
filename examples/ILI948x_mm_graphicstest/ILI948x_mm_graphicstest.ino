@@ -24,32 +24,36 @@ void setup() {
   Serial.println(testFillScreen());
   delay(200);
 
+  Serial.print(F("Text                     "));
+  Serial.println(testText());
+  delay(600);
+
   Serial.print(F("Lines                    "));
   Serial.println(testLines(ILI9488_CYAN));
   delay(500);
 
   Serial.print(F("Horiz/Vert Lines         "));
   Serial.println(testFastLines(ILI9488_RED, ILI9488_BLUE));
-  delay(1500);
+  delay(500);
 
   Serial.print(F("Circles (filled)         "));
   Serial.println(testFilledCircles(10, ILI9488_MAGENTA));
 
   Serial.print(F("Circles (outline)        "));
   Serial.println(testCircles(10, ILI9488_WHITE));
-  delay(1200);
+  delay(200);
 
   Serial.print(F("Rectangles (outline)     "));
   Serial.println(testRects(ILI9488_GREEN));
-  delay(1500);
+  delay(500);
 
   Serial.print(F("Rectangles (filled)      "));
   Serial.println(testFilledRects(ILI9488_YELLOW, ILI9488_MAGENTA));
-  delay(1500);
+  delay(500);
 
   Serial.print(F("Triangles (outline)      "));
   Serial.println(testTriangles());
-  delay(1200);
+  delay(200);
 
   Serial.print(F("Triangles (filled)       "));
   Serial.println(testFilledTriangles());
@@ -57,16 +61,22 @@ void setup() {
 
   Serial.print(F("Rounded rects (outline)  "));
   Serial.println(testRoundRects());
-  delay(1200);
+  delay(200);
 
   Serial.print(F("Rounded rects (filled)   "));
   Serial.println(testFilledRoundRects());
-  delay(1200);
+  delay(200);
 
   Serial.println(F("Done!"));
 }
 
 void loop() {
+  for(uint8_t rotation=0; rotation<4; rotation++) {
+    lcd.setRotation(rotation);
+    testText();
+    delay(1000);
+  }
+
   delay(1000);
   lcd.pushPixels16bit(flexio_teensy_mm,0,0,479,319); // 480x320
   delay(1000);
@@ -74,6 +84,33 @@ void loop() {
   delay(1000);
 }
 
+
+unsigned long testText() {
+  lcd.fillScreen(ILI9488_BLACK);
+  unsigned long start = micros();
+  lcd.setCursor(0, 0);
+  lcd.setTextColor(ILI9488_WHITE);  lcd.setTextSize(1);
+  lcd.println("Hello World!");
+  lcd.setTextColor(ILI9488_YELLOW); lcd.setTextSize(2);
+  lcd.println(1234.56);
+  lcd.setTextColor(ILI9488_RED);    lcd.setTextSize(3);
+  lcd.println(0xDEADBEEF, HEX);
+  lcd.println();
+  lcd.setTextColor(ILI9488_GREEN);
+  lcd.setTextSize(5);
+  lcd.println("Groop");
+  lcd.setTextSize(2);
+  lcd.println("I implore thee,");
+  lcd.setTextSize(1);
+  lcd.println("my foonting turlingdromes.");
+  lcd.println("And hooptiously drangle me");
+  lcd.println("with crinkly bindlewurdles,");
+  lcd.println("Or I will rend thee");
+  lcd.println("in the gobberwarts");
+  lcd.println("with my blurglecruncheon,");
+  lcd.println("see if I don't!");
+  return micros() - start;
+}
 
 void test_display() {
   lcd.setRotation(3);

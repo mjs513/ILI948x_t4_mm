@@ -175,6 +175,11 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX
 		}
 	}
   
+  // kurts experiment
+  void writecommand_cont(uint8_t cmd);
+  void write16BitColor(uint16_t color);
+  void endCommand();
+  
   void write16BitColor(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint16_t * pcolors, uint16_t count);
   void write16BitColorDMA(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint16_t * pcolors, uint16_t count);
 
