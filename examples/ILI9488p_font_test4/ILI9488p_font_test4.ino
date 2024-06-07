@@ -40,6 +40,8 @@ typedef struct {
 
 
 const ili_fonts_test_t font_test_list[] = {
+  {nullptr, nullptr,  "SystemFont", ILI9488_WHITE, ILI9488_WHITE},
+  {nullptr, nullptr,  "SystemFont", ILI9488_RED, ILI9488_YELLOW},
   {&Arial_12, nullptr,  "Arial_12", ILI9488_WHITE, ILI9488_WHITE},
   {&Arial_12_Bold, nullptr,  "ArialBold 12", ILI9488_YELLOW, ILI9488_YELLOW},
   {&ComicSansMS_12, nullptr,  "ComicSansMS 12", ILI9488_GREEN, ILI9488_GREEN},
@@ -148,7 +150,8 @@ void loop()
     else
       tft.setTextColor(font_test_list[font_index].font_fg_color);
     if (font_test_list[font_index].ili_font) tft.setFont(*font_test_list[font_index].ili_font);
-    else tft.setFont(font_test_list[font_index].gfx_font);
+    else if (font_test_list[font_index].gfx_font) tft.setFont(font_test_list[font_index].gfx_font);
+    else tft.setFont();
     tft.println(font_test_list[font_index].font_name);
     displayStuff1();
   }
