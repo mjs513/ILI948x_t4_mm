@@ -1703,7 +1703,7 @@ void ILI948x_t4_mm::DMAerror(){
   } 
 }
 
-void ILI948x_t4_mm::writecommand_cont(uint8_t cmd)  {
+void ILI948x_t4_mm::beginWrite16BitColors()  {
  while(WR_DMATransferDone == false)
   {
     //Wait for any DMA transfers to complete
@@ -1716,7 +1716,7 @@ void ILI948x_t4_mm::writecommand_cont(uint8_t cmd)  {
     //microSecondDelay();
     
     /* Write command index */
-    p->SHIFTBUF[0] = cmd;
+    p->SHIFTBUF[0] = ILI9488_RAMWR;
 
     /*Wait for transfer to be completed */
     while(0 == (p->TIMSTAT & (1 << 0)))
@@ -1740,7 +1740,7 @@ void ILI948x_t4_mm::write16BitColor(uint16_t color) {
     p->SHIFTBUF[0] = color & 0xFF;
 }
 
-void ILI948x_t4_mm::endCommand() {
+void ILI948x_t4_mm::endWrite16BitColors() {
     /*Wait for transfer to be completed */
     while(0 == (p->TIMSTAT |= (1U << 0)))
     {
@@ -1800,12 +1800,12 @@ void ILI948x_t4_mm::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_
   if((y + h - 1) >= _displayclipy2) h = _displayclipy2 - y;
 
   setAddr(x, y, x+w-1, y+h-1);
-  writecommand_cont(ILI9488_RAMWR);
+  beginWrite16BitColors();
   uint32_t count_pixels = w * h;
   while (count_pixels--) {
     write16BitColor(color);
   }
-  endCommand();
+  endWrite16BitColors();
 
 }
 
