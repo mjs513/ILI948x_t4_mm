@@ -76,7 +76,7 @@ void loop() {
     testText();
     delay(1000);
   }
-
+  lcd.fillScreen(ILI9488_BLACK);
   delay(1000);
   lcd.pushPixels16bit(flexio_teensy_mm,0,0,479,319); // 480x320
   delay(1000);
