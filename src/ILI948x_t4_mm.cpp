@@ -1790,7 +1790,7 @@ void ILI948x_t4_mm::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_
   x+=_originx;
   y+=_originy;
 
-/*
+
   // Rectangular clipping (drawChar w/big text requires this)
   if((x >= _displayclipx2) || (y >= _displayclipy2)) return;
   if (((x+w) <= _displayclipx1) || ((y+h) <= _displayclipy1)) return;
@@ -1798,7 +1798,6 @@ void ILI948x_t4_mm::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_
   if(y < _displayclipy1) {  h -= (_displayclipy1 - y); y = _displayclipy1;  }
   if((x + w - 1) >= _displayclipx2)  w = _displayclipx2  - x;
   if((y + h - 1) >= _displayclipy2) h = _displayclipy2 - y;
-*/
 
   setAddr(x, y, x+w-1, y+h-1);
   writecommand_cont(ILI9488_RAMWR);
@@ -1813,7 +1812,7 @@ void ILI948x_t4_mm::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_
 void ILI948x_t4_mm::drawPixel(int16_t x, int16_t y, uint16_t color) {
 	x += _originx;
 	y += _originy;
-	//if((x < _displayclipx1) ||(x >= _displayclipx2) || (y < _displayclipy1) || (y >= _displayclipy2)) return;
+	if((x < _displayclipx1) ||(x >= _displayclipx2) || (y < _displayclipy1) || (y >= _displayclipy2)) return;
 
 		//setAddr(x, y, x, y);
     uint16_t pcolors[1];
@@ -1827,13 +1826,13 @@ void ILI948x_t4_mm::drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t colo
 {
 	x+=_originx;
 	y+=_originy;
-  /*
+
 	// Rectangular clipping
 	if((x < _displayclipx1) || (x >= _displayclipx2) || (y >= _displayclipy2)) return;
 	if(y < _displayclipy1) { h = h - (_displayclipy1 - y); y = _displayclipy1;}
 	if((y+h-1) >= _displayclipy2) h = _displayclipy2-y;
 	if(h<1) return;
-*/
+
 		//setAddr(x, y, x, y+h-1);
 		//write16BitColor(color,h, true);
     //drawLine(x, y, x, y + h - 1, color);
@@ -1848,13 +1847,12 @@ void ILI948x_t4_mm::drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t colo
 {
 	x+=_originx;
 	y+=_originy;
-/*
+
 	// Rectangular clipping
 	if((y < _displayclipy1) || (x >= _displayclipx2) || (y >= _displayclipy2)) return;
 	if(x<_displayclipx1) { w = w - (_displayclipx1 - x); x = _displayclipx1; }
 	if((x+w-1) >= _displayclipx2)  w = _displayclipx2-x;
 	if (w<1) return;
-*/
 
 		//setAddr(x, y, x+w-1, y);
 		//write16BitColor(color, w, true);
