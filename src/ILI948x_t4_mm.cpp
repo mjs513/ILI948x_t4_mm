@@ -1833,14 +1833,13 @@ void ILI948x_t4_mm::drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t colo
 	if((y+h-1) >= _displayclipy2) h = _displayclipy2-y;
 	if(h<1) return;
 
-		//setAddr(x, y, x, y+h-1);
-		//write16BitColor(color,h, true);
-    //drawLine(x, y, x, y + h - 1, color);
-    uint16_t pcolors[h];
-    for(uint16_t j = 0; j < h; j++) pcolors[j] = color;
-    //setAddr(x, y, x, y);
-		write16BitColor(x, y, x, y + h - 1, pcolors, h);
-
+  // quick and dirty output
+	setAddr(x, y, x, y+h-1);
+  beginWrite16BitColors();
+  while(h--) {
+    write16BitColor(color);
+  }
+  endWrite16BitColors();
 }
 
 void ILI948x_t4_mm::drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color)
@@ -1854,11 +1853,10 @@ void ILI948x_t4_mm::drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t colo
 	if((x+w-1) >= _displayclipx2)  w = _displayclipx2-x;
 	if (w<1) return;
 
-		//setAddr(x, y, x+w-1, y);
-		//write16BitColor(color, w, true);
-    //drawLine(x, y, x + w - 1, y, color);
-    uint16_t pcolors[w];
-    for(uint16_t j = 0; j < w; j++) pcolors[j] = color;
-    //setAddr(x, y, x, y);
-		write16BitColor(x, y, x+w-1, y, pcolors, w);
+  setAddr(x, y, x+w-1, y);
+  beginWrite16BitColors();
+  while(w--) {
+    write16BitColor(color);
+  }
+  endWrite16BitColors();
 }
