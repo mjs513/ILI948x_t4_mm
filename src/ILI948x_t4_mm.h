@@ -5,8 +5,8 @@
 
 //#define ILI9481_1
 //#define ILI9481_2
-#define ILI9486
-//#define ILI9488
+//#define ILI9486
+#define ILI9488
 //#define R61529
 
 #include "Arduino.h"
@@ -187,7 +187,12 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX
   void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);
   void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);
   void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
-  
+  void writeRect(int16_t x, int16_t y, int16_t w, int16_t h, const uint16_t *pcolors);
+  void writeSubImageRect(int16_t x, int16_t y, int16_t w, int16_t h, 
+    int16_t image_offset_x, int16_t image_offset_y, int16_t image_width, 
+    int16_t image_height, const uint16_t *pcolors);
+
+
     typedef void(*CBF)();
     CBF _callback;
     void onCompleteCB(CBF callback);

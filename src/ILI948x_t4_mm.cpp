@@ -1783,6 +1783,117 @@ FASTRUN void ILI948x_t4_mm::write16BitColorDMA(uint16_t x1, uint16_t y1, uint16_
   MulBeatWR_nPrm_DMA(ILI9488_RAMWR, pcolors, area);
 }
 
+// Now lets see if we can writemultiple pixels
+void ILI948x_t4_mm::writeRect(int16_t x, int16_t y, int16_t w, int16_t h, const uint16_t *pcolors)
+{
+	if (x == CENTER) x = (_width - w) / 2;
+	if (y == CENTER) y = (_height - h) / 2;
+	x+=_originx;
+	y+=_originy;
+	uint16_t x_clip_left = 0;  // How many entries at start of colors to skip at start of row
+	uint16_t x_clip_right = 0;    // how many color entries to skip at end of row for clipping
+	// Rectangular clipping 
+
+	// See if the whole thing out of bounds...
+	if((x >= _displayclipx2) || (y >= _displayclipy2)) return;
+	if (((x+w) <= _displayclipx1) || ((y+h) <= _displayclipy1)) return;
+
+	// In these cases you can not do simple clipping, as we need to synchronize the colors array with the
+	// We can clip the height as when we get to the last visible we don't have to go any farther. 
+	// also maybe starting y as we will advance the color array. 
+ 	if(y < _displayclipy1) {
+ 		int dy = (_displayclipy1 - y);
+ 		h -= dy; 
+ 		pcolors += (dy*w); // Advance color array to 
+ 		y = _displayclipy1; 	
+ 	}
+
+	if((y + h - 1) >= _displayclipy2) h = _displayclipy2 - y;
+
+	// For X see how many items in color array to skip at start of row and likewise end of row 
+	if(x < _displayclipx1) {
+		x_clip_left = _displayclipx1-x; 
+		w -= x_clip_left; 
+		x = _displayclipx1; 	
+	}
+	if((x + w - 1) >= _displayclipx2) {
+		x_clip_right = w;
+		w = _displayclipx2  - x;
+		x_clip_right -= w; 
+	} 
+
+
+  beginWrite16BitColors();
+	for(y=h; y>0; y--) {
+		pcolors += x_clip_left;
+		for(x=w; x>1; x--) {
+			write16BitColor(*pcolors++);
+		}
+		write16BitColor(*pcolors++);
+		pcolors += x_clip_right;
+	}
+  endWrite16BitColors();
+  
+}
+
+
+// Now lets see if we can writemultiple pixels
+//                                    screen rect
+void ILI948x_t4_mm::writeSubImageRect(int16_t x, int16_t y, int16_t w, int16_t h, 
+  int16_t image_offset_x, int16_t image_offset_y, int16_t image_width, int16_t image_height, const uint16_t *pcolors)
+{
+  if (x == CENTER) x = (_width - w) / 2;
+  if (y == CENTER) y = (_height - h) / 2;
+  x+=_originx;
+  y+=_originy;
+  // Rectangular clipping 
+
+  // See if the whole thing out of bounds...
+  if((x >= _displayclipx2) || (y >= _displayclipy2)) return;
+  if (((x+w) <= _displayclipx1) || ((y+h) <= _displayclipy1)) return;
+
+  // Now lets use or image offsets to get to the first pixels data
+  pcolors += image_offset_y * image_width + image_offset_x;
+
+  // In these cases you can not do simple clipping, as we need to synchronize the colors array with the
+  // We can clip the height as when we get to the last visible we don't have to go any farther. 
+  // also maybe starting y as we will advance the color array. 
+  if(y < _displayclipy1) {
+    int dy = (_displayclipy1 - y);
+    h -= dy; 
+    pcolors += (dy * image_width); // Advance color array by that number of rows in the image 
+    y = _displayclipy1;   
+  }
+
+  if((y + h - 1) >= _displayclipy2) h = _displayclipy2 - y;
+
+  // For X see how many items in color array to skip at start of row and likewise end of row 
+  if(x < _displayclipx1) {
+    uint16_t x_clip_left = _displayclipx1-x; 
+    w -= x_clip_left; 
+    x = _displayclipx1;   
+    pcolors += x_clip_left;  // pre index the colors array.
+  }
+  if((x + w - 1) >= _displayclipx2) {
+    uint16_t x_clip_right = w;
+    w = _displayclipx2  - x;
+    x_clip_right -= w; 
+  } 
+
+  beginWrite16BitColors();
+  setAddr(x, y, x+w-1, y+h-1);
+  for(y=h; y>0; y--) {
+    const uint16_t *pcolors_row = pcolors; 
+    for(x=w; x>1; x--) {
+      write16BitColor(*pcolors++);
+    }
+    write16BitColor(*pcolors++);
+    pcolors = pcolors_row + image_width;
+  }
+  endWrite16BitColors();
+}
+
+
 // fill a rectangle
 void ILI948x_t4_mm::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
 {
