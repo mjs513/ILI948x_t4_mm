@@ -151,8 +151,8 @@ void drawTestScreen() {
 
   tft.drawRect(0, 150, 100, 50, ILI9488_WHITE);
   tft.drawLine(0, 150, 100, 50, ILI9488_GREEN);
-//  tft.fillRectVGradient(125, 150, 50, 50, ILI9488_GREEN, ILI9488_YELLOW);
-//  tft.fillRectHGradient(200, 150, 50, 50, ILI9488_YELLOW, ILI9488_GREEN);
+  tft.fillRectVGradient(125, 150, 50, 50, ILI9488_GREEN, ILI9488_YELLOW);
+  tft.fillRectHGradient(200, 150, 50, 50, ILI9488_YELLOW, ILI9488_GREEN);
   // Try a read rect and write rect
 
 #if 0
