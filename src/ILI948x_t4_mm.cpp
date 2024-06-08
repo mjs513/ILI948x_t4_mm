@@ -1842,6 +1842,7 @@ void ILI948x_t4_mm::writeRect(int16_t x, int16_t y, int16_t w, int16_t h, const 
 void ILI948x_t4_mm::writeSubImageRect(int16_t x, int16_t y, int16_t w, int16_t h, 
   int16_t image_offset_x, int16_t image_offset_y, int16_t image_width, int16_t image_height, const uint16_t *pcolors)
 {
+  //Serial.printf("writeSubImageRect(%d %d %d %d : %d %d %d %d : %p)\n", x, y, w, h, image_offset_x, image_offset_y, image_width, image_height, pcolors);
   if (x == CENTER) x = (_width - w) / 2;
   if (y == CENTER) y = (_height - h) / 2;
   x+=_originx;
@@ -1880,15 +1881,17 @@ void ILI948x_t4_mm::writeSubImageRect(int16_t x, int16_t y, int16_t w, int16_t h
     x_clip_right -= w; 
   } 
 
-  beginWrite16BitColors();
+  //Serial.printf("\t(%d %d %d %d : %d %d %d %d : %p)\n", x, y, w, h, image_offset_x, image_offset_y, image_width, image_height, pcolors);
   setAddr(x, y, x+w-1, y+h-1);
+  beginWrite16BitColors();
+  const uint16_t *pcolors_row = pcolors; 
   for(y=h; y>0; y--) {
-    const uint16_t *pcolors_row = pcolors; 
+    pcolors = pcolors_row;
     for(x=w; x>1; x--) {
       write16BitColor(*pcolors++);
     }
     write16BitColor(*pcolors++);
-    pcolors = pcolors_row + image_width;
+    pcolors_row += image_width;
   }
   endWrite16BitColors();
 }
