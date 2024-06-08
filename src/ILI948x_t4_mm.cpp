@@ -1709,7 +1709,6 @@ void ILI948x_t4_mm::beginWrite16BitColors()  {
     //Wait for any DMA transfers to complete
   }
     FlexIO_Config_SnglBeat();
-    uint16_t buf;
     /* Assert CS, RS pins */
     CSLow();
     DCLow();
