@@ -5,7 +5,7 @@
 
 //#define ILI9481_1
 //#define ILI9481_2
-#define ILI9486
+//#define ILI9486
 //#define ILI9488
 //#define R61529
 
@@ -97,13 +97,23 @@
 #define MADCTL_SS  0x02
 
 //MADCTL 0,1,2,3 for setting rotation and 4 for screenshot
-#if defined (ILI9488) || defined (ILI9486) || defined(ILI9486_1) || defined(ILI9488_1)
+/*
+#if defined (ILI9488) || defined (ILI9486)
 #define MADCTL_ARRAY { MADCTL_MX | MADCTL_BGR, MADCTL_MV | MADCTL_BGR, MADCTL_MY | MADCTL_BGR, MADCTL_MX | MADCTL_MY | MADCTL_MV | MADCTL_BGR, MADCTL_MY | MADCTL_MV | MADCTL_BGR } // ILI9488/9486
 #elif defined (ILI9481_1) || defined (ILI9481_2)
 #define MADCTL_ARRAY { MADCTL_BGR | MADCTL_SS, MADCTL_MV | MADCTL_BGR, MADCTL_BGR | MADCTL_GS, MADCTL_MV | MADCTL_BGR | MADCTL_SS | MADCTL_GS } // ILI9481
 #elif defined (R61529)
 #define MADCTL_ARRAY { MADCTL_RGB, MADCTL_MV | MADCTL_MX | MADCTL_RGB, MADCTL_RGB | MADCTL_GS | MADCTL_MX, MADCTL_MV | MADCTL_RGB | MADCTL_GS } // R61529
 #endif
+*/
+
+enum {
+ ILI9488 = 0,
+ ILI9486 = 1,
+ ILI9486_1 = 2,
+ ILI9486_2 = 3,
+ R61529 = 4
+};
 
 
 #ifdef __cplusplus
@@ -111,7 +121,7 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX
 {
   public:
     ILI948x_t4_mm(int8_t dc, int8_t cs = -1, int8_t rst = -1);
-    void begin(uint8_t buad_div = 20);
+    void begin(uint8_t display_name = ILI9488, uint8_t buad_div = 20);
     uint8_t getBusSpd();
 
 
@@ -199,7 +209,7 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX
 
     uint8_t _bitDepth = 16;
     uint8_t _rotation = 0;
-    const uint8_t MADCTL[5] = MADCTL_ARRAY;
+    uint8_t MADCTL[5];
 
     uint8_t _frameRate = 60;
 
@@ -219,7 +229,7 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX
     uint16_t *MulBeatDataRemain;
     uint32_t TotalSize; 
 
-    void displayInit();
+    void displayInit(uint8_t display_name);
     void CSLow();
     void CSHigh();
     void DCLow();
