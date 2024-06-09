@@ -5,8 +5,8 @@
 
 //#define ILI9481_1
 //#define ILI9481_2
-//#define ILI9486
-#define ILI9488
+#define ILI9486
+//#define ILI9488
 //#define R61529
 
 #include "Arduino.h"
@@ -110,7 +110,7 @@
 class ILI948x_t4_mm : public Teensy_Parallel_GFX
 {
   public:
-    ILI948x_t4_mm(int8_t dc, int8_t cs = -1, int8_t rst = -1, int8_t rd = -1);
+    ILI948x_t4_mm(int8_t dc, int8_t cs = -1, int8_t rst = -1);
     void begin(uint8_t buad_div = 20);
     uint8_t getBusSpd();
 
@@ -207,7 +207,7 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX
     uint16_t _tearingScanLine = 0;
 
     //int16_t _width, _height;
-    int8_t  _dc, _cs, _rst, _rd;
+    int8_t  _dc, _cs, _rst;
 
     uint8_t _dummy;
     uint8_t _curMADCTL;
@@ -224,8 +224,6 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX
     void CSHigh();
     void DCLow();
     void DCHigh();
-    void RDLow();
-    void RDHigh();
     void gpioWrite();
     void gpioRead();
     

@@ -6,13 +6,12 @@
 #endif
 
 
-FLASHMEM ILI948x_t4_mm::ILI948x_t4_mm(int8_t dc, int8_t cs, int8_t rst, int8_t rd)
+FLASHMEM ILI948x_t4_mm::ILI948x_t4_mm(int8_t dc, int8_t cs, int8_t rst)
     : Teensy_Parallel_GFX(_TFTWIDTH, _TFTHEIGHT)
 { 
   _dc = dc;
   _cs = cs;
   _rst = rst;
-  _rd = rd;
 }
 
 FLASHMEM void ILI948x_t4_mm::begin(uint8_t buad_div) 
@@ -41,17 +40,14 @@ FLASHMEM void ILI948x_t4_mm::begin(uint8_t buad_div)
   pinMode(_cs, OUTPUT); // CS
   pinMode(_dc, OUTPUT); // DC
   pinMode(_rst, OUTPUT); // RST
-  pinMode(_rd, OUTPUT); // RD
   
   *(portControlRegister(_cs)) = 0xFF;
   *(portControlRegister(_dc)) = 0xFF;
   *(portControlRegister(_rst)) = 0xFF;
-  *(portControlRegister(_rd)) = 0xFF;
   
   digitalWriteFast(_cs, HIGH);
   digitalWriteFast(_dc, HIGH);
   digitalWriteFast(_rst, HIGH);
-  digitalWriteFast(_rd, HIGH);
   
   delay(15);
   digitalWrite(_rst, LOW);
@@ -1018,17 +1014,6 @@ FASTRUN void ILI948x_t4_mm::DCHigh()
   digitalWriteFast(_dc, HIGH);       //Writing data to TFT
 }
 
-FASTRUN void ILI948x_t4_mm::RDLow() 
-{
-  digitalWriteFast(_rd, LOW);       //Writing command to TFT
-}
-
-FASTRUN void ILI948x_t4_mm::RDHigh() 
-{
-  digitalWriteFast(_rd, HIGH);       //Writing data to TFT
-}
-
-
 FASTRUN void ILI948x_t4_mm::microSecondDelay()
 {
   for (uint32_t i=0; i<99; i++) __asm__("nop\n\t");
@@ -1187,22 +1172,15 @@ FASTRUN uint8_t ILI948x_t4_mm::readCommand(uint8_t const cmd){
     uint8_t dummy = 0;
     uint8_t data = 0;
 
-    RDLow();
     while (0 == (p->SHIFTSTAT & (1 << 3)))
         {
         }
     dummy = p->SHIFTBUFBYS[3];
-    
-    microSecondDelay();
-    RDHigh();
-    microSecondDelay();
-    RDLow();
+
     while (0 == (p->SHIFTSTAT & (1 << 3)))
         {
         }
     data = p->SHIFTBUFBYS[3];
-    microSecondDelay();
-    RDHigh();
     //Serial.printf("Dummy 0x%x, data 0x%x\n", dummy, data);
     
     

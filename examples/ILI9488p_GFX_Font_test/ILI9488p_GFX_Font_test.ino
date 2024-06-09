@@ -19,7 +19,7 @@
 #include <ILI9488_t3_font_ComicSansMS.h>
 #include "Fonts/FreeSansOblique12pt7b.h"
 
-ILI948x_t4_mm tft = ILI948x_t4_mm(13,11,12, 7); //(dc, cs, rst, rd)
+ILI948x_t4_mm tft = ILI948x_t4_mm(13,11,7); //(dc, cs, rst, rd)
 
 
 void setup() {

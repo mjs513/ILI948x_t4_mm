@@ -57,7 +57,7 @@ const ili_fonts_test_t font_test_list[] = {
 
 } ;
 
-ILI948x_t4_mm tft = ILI948x_t4_mm(13,11,12, 7); //(dc, cs, rst, rd)
+ILI948x_t4_mm tft = ILI948x_t4_mm(13,11,7); //(dc, cs, rst, rd)
 
 uint8_t test_screen_rotation = 0;
 

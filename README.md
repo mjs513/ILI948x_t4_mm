@@ -13,21 +13,23 @@ First include the library and create a constructor:
 #include "ILI948x_t4_mm.h"
 #define CS 11
 #define DC 13
-#define RST 12
+#define RST 7
 ILI948x_t4_mm lcd = ILI948x_t4_mm(DC,CS,RST);
 ```
 You can use and GPIO pins for CS, DC and RST
 
 Next, wire up your LCD - use Teensy pins:
-* pin 10 - WR
-* pin 40 - D0
-* pin 41 - D1
-* pin 42 - D2
-* pin 43 - D3
-* pin 44 - D4
-* pin 45 - D5
-* pin 6 - D6
-* pin 9 - D7
+Note: The are FLEXIO 2 pins on the Micromod The flexio pins shown in ()
+* pin 10 - WR (0)
+* pin 12 - RD (1)
+* pin 40 - D0 (4)
+* pin 41 - D1 (5)
+* pin 42 - D2 (6)
+* pin 43 - D3 (7)
+* pin 44 - D4 (8)
+* pin 45 - D5 (9)
+* pin 6 - D6 (10)
+* pin 9 - D7 (11)
    
 Wire the RD pin on the LCD to 3.3v
 
