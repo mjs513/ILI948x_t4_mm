@@ -6,12 +6,13 @@
 #endif
 
 
-FLASHMEM ILI948x_t4_mm::ILI948x_t4_mm(int8_t dc, int8_t cs, int8_t rst)
+FLASHMEM ILI948x_t4_mm::ILI948x_t4_mm(int8_t dc, int8_t cs, int8_t rst, int8_t rd)
     : Teensy_Parallel_GFX(_TFTWIDTH, _TFTHEIGHT)
 { 
   _dc = dc;
   _cs = cs;
   _rst = rst;
+  _rd = rd;
 }
 
 FLASHMEM void ILI948x_t4_mm::begin(uint8_t buad_div) 
@@ -40,14 +41,18 @@ FLASHMEM void ILI948x_t4_mm::begin(uint8_t buad_div)
   pinMode(_cs, OUTPUT); // CS
   pinMode(_dc, OUTPUT); // DC
   pinMode(_rst, OUTPUT); // RST
+  pinMode(_rd, OUTPUT); // RD
+  
   *(portControlRegister(_cs)) = 0xFF;
   *(portControlRegister(_dc)) = 0xFF;
   *(portControlRegister(_rst)) = 0xFF;
+  *(portControlRegister(_rd)) = 0xFF;
   
   digitalWriteFast(_cs, HIGH);
   digitalWriteFast(_dc, HIGH);
   digitalWriteFast(_rst, HIGH);
-
+  digitalWriteFast(_rd, HIGH);
+  
   delay(15);
   digitalWrite(_rst, LOW);
   delay(15);
@@ -251,7 +256,7 @@ FASTRUN void ILI948x_t4_mm::displayInfo(){
   Serial.printf("Signal Mode: 0x%02X\n",        readCommand(ILI9488_RDDSM)); 
   uint8_t sdRes = readCommand(ILI9488_RDSELFDIAG);
   Serial.printf("Self Diagnostic: %s (0x%02X)\n", sdRes == 0xc0 ? "OK" : "Failed", sdRes);
-CSHigh();
+  CSHigh();
 }
 
 FASTRUN void ILI948x_t4_mm::pushPixels16bit(const uint16_t * pcolors, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
@@ -1013,6 +1018,17 @@ FASTRUN void ILI948x_t4_mm::DCHigh()
   digitalWriteFast(_dc, HIGH);       //Writing data to TFT
 }
 
+FASTRUN void ILI948x_t4_mm::RDLow() 
+{
+  digitalWriteFast(_rd, LOW);       //Writing command to TFT
+}
+
+FASTRUN void ILI948x_t4_mm::RDHigh() 
+{
+  digitalWriteFast(_rd, HIGH);       //Writing data to TFT
+}
+
+
 FASTRUN void ILI948x_t4_mm::microSecondDelay()
 {
   for (uint32_t i=0; i<99; i++) __asm__("nop\n\t");
@@ -1095,7 +1111,7 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat_Read()
     p->CTRL |= FLEXIO_CTRL_SWRST;
     p->CTRL &= ~FLEXIO_CTRL_SWRST;
 
-    gpioRead();
+    gpioRead();  //write line high, pin 12(rst) as output
 
     /* Configure the shifters */
     p->SHIFTCFG[3] = 
@@ -1108,7 +1124,7 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat_Read()
         FLEXIO_SHIFTCTL_TIMSEL(0)                                              /* Shifter's assigned timer index */
       | FLEXIO_SHIFTCTL_TIMPOL*(1)                                             /* Shift on posedge of shift clock */
       | FLEXIO_SHIFTCTL_PINCFG(0)                                              /* Shifter's pin configured as input */
-      | FLEXIO_SHIFTCTL_PINSEL(4)                                              /* Shifter's pin start index */
+      | FLEXIO_SHIFTCTL_PINSEL(4)              /*D0 */                         /* Shifter's pin start index */
       | FLEXIO_SHIFTCTL_PINPOL*(0)                                             /* Shifter's pin active high */
       | FLEXIO_SHIFTCTL_SMOD(1);                                               /* Shifter mode as recieve */
 
@@ -1164,22 +1180,29 @@ FASTRUN uint8_t ILI948x_t4_mm::readCommand(uint8_t const cmd){
     /* De-assert RS pin */
     microSecondDelay();
     DCHigh();
+    
     FlexIO_Clear_Config_SnglBeat();
     FlexIO_Config_SnglBeat_Read();
 
-    uint8_t dummy;
+    uint8_t dummy = 0;
     uint8_t data = 0;
 
+    RDLow();
     while (0 == (p->SHIFTSTAT & (1 << 3)))
         {
         }
     dummy = p->SHIFTBUFBYS[3];
-
+    
+    microSecondDelay();
+    RDHigh();
+    microSecondDelay();
+    RDLow();
     while (0 == (p->SHIFTSTAT & (1 << 3)))
         {
         }
     data = p->SHIFTBUFBYS[3];
-
+    microSecondDelay();
+    RDHigh();
     //Serial.printf("Dummy 0x%x, data 0x%x\n", dummy, data);
     
     
@@ -1764,212 +1787,3 @@ FASTRUN void ILI948x_t4_mm::write16BitColor(uint16_t x1, uint16_t y1, uint16_t x
   SglBeatWR_nPrm_16(ILI9488_RAMWR, pcolors, area);
 }
 
-
-
-
-FASTRUN void ILI948x_t4_mm::write16BitColorDMA(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint16_t * pcolors, uint16_t count)
-{
-  while(WR_DMATransferDone == false)
-  {
-    //Wait for any DMA transfers to complete
-  }
-  uint32_t area = count;
-  if (!((_lastx1 == x1) && (_lastx2 == x2) && (_lasty1 == y1) && (_lasty2 == y2))) {
-  setAddrWindow(x1, y1, x2, y2);
-     _lastx1 = x1;  _lastx2 = x2;  _lasty1 = y1;  _lasty2 = y2;
-  }
-
-  MulBeatWR_nPrm_DMA(ILI9488_RAMWR, pcolors, area);
-}
-
-// Now lets see if we can writemultiple pixels
-void ILI948x_t4_mm::writeRect(int16_t x, int16_t y, int16_t w, int16_t h, const uint16_t *pcolors)
-{
-	if (x == CENTER) x = (_width - w) / 2;
-	if (y == CENTER) y = (_height - h) / 2;
-	x+=_originx;
-	y+=_originy;
-	uint16_t x_clip_left = 0;  // How many entries at start of colors to skip at start of row
-	uint16_t x_clip_right = 0;    // how many color entries to skip at end of row for clipping
-	// Rectangular clipping 
-
-	// See if the whole thing out of bounds...
-	if((x >= _displayclipx2) || (y >= _displayclipy2)) return;
-	if (((x+w) <= _displayclipx1) || ((y+h) <= _displayclipy1)) return;
-
-	// In these cases you can not do simple clipping, as we need to synchronize the colors array with the
-	// We can clip the height as when we get to the last visible we don't have to go any farther. 
-	// also maybe starting y as we will advance the color array. 
- 	if(y < _displayclipy1) {
- 		int dy = (_displayclipy1 - y);
- 		h -= dy; 
- 		pcolors += (dy*w); // Advance color array to 
- 		y = _displayclipy1; 	
- 	}
-
-	if((y + h - 1) >= _displayclipy2) h = _displayclipy2 - y;
-
-	// For X see how many items in color array to skip at start of row and likewise end of row 
-	if(x < _displayclipx1) {
-		x_clip_left = _displayclipx1-x; 
-		w -= x_clip_left; 
-		x = _displayclipx1; 	
-	}
-	if((x + w - 1) >= _displayclipx2) {
-		x_clip_right = w;
-		w = _displayclipx2  - x;
-		x_clip_right -= w; 
-	} 
-
-
-  beginWrite16BitColors();
-	for(y=h; y>0; y--) {
-		pcolors += x_clip_left;
-		for(x=w; x>1; x--) {
-			write16BitColor(*pcolors++);
-		}
-		write16BitColor(*pcolors++);
-		pcolors += x_clip_right;
-	}
-  endWrite16BitColors();
-  
-}
-
-
-// Now lets see if we can writemultiple pixels
-//                                    screen rect
-void ILI948x_t4_mm::writeSubImageRect(int16_t x, int16_t y, int16_t w, int16_t h, 
-  int16_t image_offset_x, int16_t image_offset_y, int16_t image_width, int16_t image_height, const uint16_t *pcolors)
-{
-  //Serial.printf("writeSubImageRect(%d %d %d %d : %d %d %d %d : %p)\n", x, y, w, h, image_offset_x, image_offset_y, image_width, image_height, pcolors);
-  if (x == CENTER) x = (_width - w) / 2;
-  if (y == CENTER) y = (_height - h) / 2;
-  x+=_originx;
-  y+=_originy;
-  // Rectangular clipping 
-
-  // See if the whole thing out of bounds...
-  if((x >= _displayclipx2) || (y >= _displayclipy2)) return;
-  if (((x+w) <= _displayclipx1) || ((y+h) <= _displayclipy1)) return;
-
-  // Now lets use or image offsets to get to the first pixels data
-  pcolors += image_offset_y * image_width + image_offset_x;
-
-  // In these cases you can not do simple clipping, as we need to synchronize the colors array with the
-  // We can clip the height as when we get to the last visible we don't have to go any farther. 
-  // also maybe starting y as we will advance the color array. 
-  if(y < _displayclipy1) {
-    int dy = (_displayclipy1 - y);
-    h -= dy; 
-    pcolors += (dy * image_width); // Advance color array by that number of rows in the image 
-    y = _displayclipy1;   
-  }
-
-  if((y + h - 1) >= _displayclipy2) h = _displayclipy2 - y;
-
-  // For X see how many items in color array to skip at start of row and likewise end of row 
-  if(x < _displayclipx1) {
-    uint16_t x_clip_left = _displayclipx1-x; 
-    w -= x_clip_left; 
-    x = _displayclipx1;   
-    pcolors += x_clip_left;  // pre index the colors array.
-  }
-  if((x + w - 1) >= _displayclipx2) {
-    uint16_t x_clip_right = w;
-    w = _displayclipx2  - x;
-    x_clip_right -= w; 
-  } 
-
-  //Serial.printf("\t(%d %d %d %d : %d %d %d %d : %p)\n", x, y, w, h, image_offset_x, image_offset_y, image_width, image_height, pcolors);
-  setAddr(x, y, x+w-1, y+h-1);
-  beginWrite16BitColors();
-  const uint16_t *pcolors_row = pcolors; 
-  for(y=h; y>0; y--) {
-    pcolors = pcolors_row;
-    for(x=w; x>1; x--) {
-      write16BitColor(*pcolors++);
-    }
-    write16BitColor(*pcolors++);
-    pcolors_row += image_width;
-  }
-  endWrite16BitColors();
-}
-
-
-// fill a rectangle
-void ILI948x_t4_mm::fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color)
-{
-   
-  x+=_originx;
-  y+=_originy;
-
-
-  // Rectangular clipping (drawChar w/big text requires this)
-  if((x >= _displayclipx2) || (y >= _displayclipy2)) return;
-  if (((x+w) <= _displayclipx1) || ((y+h) <= _displayclipy1)) return;
-  if(x < _displayclipx1) {  w -= (_displayclipx1-x); x = _displayclipx1;  }
-  if(y < _displayclipy1) {  h -= (_displayclipy1 - y); y = _displayclipy1;  }
-  if((x + w - 1) >= _displayclipx2)  w = _displayclipx2  - x;
-  if((y + h - 1) >= _displayclipy2) h = _displayclipy2 - y;
-
-  setAddr(x, y, x+w-1, y+h-1);
-  beginWrite16BitColors();
-  uint32_t count_pixels = w * h;
-  while (count_pixels--) {
-    write16BitColor(color);
-  }
-  endWrite16BitColors();
-
-}
-
-void ILI948x_t4_mm::drawPixel(int16_t x, int16_t y, uint16_t color) {
-	x += _originx;
-	y += _originy;
-	if((x < _displayclipx1) ||(x >= _displayclipx2) || (y < _displayclipy1) || (y >= _displayclipy2)) return;
-
-		//setAddr(x, y, x, y);
-    uint16_t pcolors[1];
-    pcolors[0] = color;
-    //setAddr(x, y, x, y);
-		write16BitColor(x, y, x, y, pcolors, 1);
-
-}
-
-void ILI948x_t4_mm::drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color)
-{
-	x+=_originx;
-	y+=_originy;
-
-	// Rectangular clipping
-	if((x < _displayclipx1) || (x >= _displayclipx2) || (y >= _displayclipy2)) return;
-	if(y < _displayclipy1) { h = h - (_displayclipy1 - y); y = _displayclipy1;}
-	if((y+h-1) >= _displayclipy2) h = _displayclipy2-y;
-	if(h<1) return;
-
-  // quick and dirty output
-	setAddr(x, y, x, y+h-1);
-  beginWrite16BitColors();
-  while(h--) {
-    write16BitColor(color);
-  }
-  endWrite16BitColors();
-}
-
-void ILI948x_t4_mm::drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color)
-{
-	x+=_originx;
-	y+=_originy;
-
-	// Rectangular clipping
-	if((y < _displayclipy1) || (x >= _displayclipx2) || (y >= _displayclipy2)) return;
-	if(x<_displayclipx1) { w = w - (_displayclipx1 - x); x = _displayclipx1; }
-	if((x+w-1) >= _displayclipx2)  w = _displayclipx2-x;
-	if (w<1) return;
-
-  setAddr(x, y, x+w-1, y);
-  beginWrite16BitColors();
-  while(w--) {
-    write16BitColor(color);
-  }
-  endWrite16BitColors();
-}

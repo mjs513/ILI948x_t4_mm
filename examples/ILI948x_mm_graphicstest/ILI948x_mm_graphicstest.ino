@@ -4,7 +4,9 @@
 
 #include "ILI948x_t4_mm.h"
 #include "flexio_teensy_mm.c"
-ILI948x_t4_mm lcd = ILI948x_t4_mm(13,11,12); //(dc, cs, rst)
+ILI948x_t4_mm lcd = ILI948x_t4_mm(13, 11, 12, 7); //(dc, cs, rst)
+
+#define CENTER Teensy_Parallel_GFX::CENTER
 
 void setup() {
   Serial.begin(115200);
@@ -15,6 +17,8 @@ void setup() {
   lcd.setBitDepth(16);
   test_display();
   lcd.setRotation(3);
+
+  lcd.displayInfo();
 
   delay(1000);
   
@@ -82,9 +86,9 @@ void loop() {
   delay(1000);
   lcd.fillScreen(ILI9488_BLACK);
   lcd.pushPixels16bitDMA(flexio_teensy_mm,0,0,479,319); // 480x320
-  delay(5000);
+  delay(2000);
   lcd.fillScreen(ILI9488_BLACK);
-  lcd.writeSubImageRect(0, 0, 100, 100, 100, 100, 480, 320, flexio_teensy_mm);
+  lcd.writeSubImageRect(CENTER, CENTER, 200, 200, 100, 100, 480, 320, flexio_teensy_mm);
   delay(5000);
 
 }

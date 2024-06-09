@@ -19,7 +19,7 @@ BR_DATUM = Bottom right
 #include <SPI.h>
 #include <ili9488_t3_font_Arial.h>
 
-ILI948x_t4_mm tft = ILI948x_t4_mm(13,11,12); //(dc, cs, rst)
+ILI948x_t4_mm tft = ILI948x_t4_mm(13,11,12, 7); //(dc, cs, rst, rd)
 
 unsigned long drawTime = 0;
 

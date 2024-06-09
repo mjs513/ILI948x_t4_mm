@@ -25,7 +25,7 @@ uint8_t use_fb = 0;
 #define ORIGIN_TEST_X 50
 #define ORIGIN_TEST_Y 50
 
-ILI948x_t4_mm tft = ILI948x_t4_mm(13,11,12); //(dc, cs, rst)
+ILI948x_t4_mm tft = ILI948x_t4_mm(13,11,12, 7); //(dc, cs, rst, rd)
 
 void setup() {
   while (!Serial && (millis() < 4000)) ;

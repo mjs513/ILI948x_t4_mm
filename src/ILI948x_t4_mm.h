@@ -110,7 +110,7 @@
 class ILI948x_t4_mm : public Teensy_Parallel_GFX
 {
   public:
-    ILI948x_t4_mm(int8_t dc, int8_t cs = -1, int8_t rst = -1);
+    ILI948x_t4_mm(int8_t dc, int8_t cs = -1, int8_t rst = -1, int8_t rd = -1);
     void begin(uint8_t buad_div = 20);
     uint8_t getBusSpd();
 
@@ -179,18 +179,7 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX
   void beginWrite16BitColors();
   void write16BitColor(uint16_t color);
   void endWrite16BitColors();
-  
   void write16BitColor(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint16_t * pcolors, uint16_t count);
-  void write16BitColorDMA(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint16_t * pcolors, uint16_t count);
-
-	void drawPixel(int16_t x, int16_t y, uint16_t color);
-  void drawFastVLine(int16_t x, int16_t y, int16_t h, uint16_t color);
-  void drawFastHLine(int16_t x, int16_t y, int16_t w, uint16_t color);
-  void fillRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
-  void writeRect(int16_t x, int16_t y, int16_t w, int16_t h, const uint16_t *pcolors);
-  void writeSubImageRect(int16_t x, int16_t y, int16_t w, int16_t h, 
-    int16_t image_offset_x, int16_t image_offset_y, int16_t image_width, 
-    int16_t image_height, const uint16_t *pcolors);
 
 
     typedef void(*CBF)();
@@ -218,7 +207,7 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX
     uint16_t _tearingScanLine = 0;
 
     //int16_t _width, _height;
-    int8_t  _dc, _cs, _rst;
+    int8_t  _dc, _cs, _rst, _rd;
 
     uint8_t _dummy;
     uint8_t _curMADCTL;
@@ -235,6 +224,8 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX
     void CSHigh();
     void DCLow();
     void DCHigh();
+    void RDLow();
+    void RDHigh();
     void gpioWrite();
     void gpioRead();
     
