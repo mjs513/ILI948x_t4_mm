@@ -1780,13 +1780,18 @@ void ILI948x_t4_mm::readRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_
     /*Wait for transfer to be completed */
 #ifndef PIXEL_18BIT_MODE
     // 16 bit mode
-    int count_bytes = w * h *2;
+    int count_pixels = w * h;
     uint8_t *pc = (uint8_t*)pcolors;
-    while (count_bytes--) {
+    while (count_pixels--) {
+        while (0 == (p->SHIFTSTAT & (1U << 3))) {
+        }
+        digitalToggleFast(0);
+        uint8_t b1 = (p->SHIFTBUFBYS[3] & 0xff);
         while (0 == (p->SHIFTSTAT & (1U << 3))) {
         }
         digitalToggleFast(0);
         *pc++ = (p->SHIFTBUFBYS[3] & 0xff);
+        *pc++ = b1;
     }
 #else    
     int count_pixels = w * h;
