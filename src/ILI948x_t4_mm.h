@@ -105,6 +105,12 @@
 #endif
 */
 
+/****************************************************************************************/
+
+#define ILI9488_CLOCK_READ 60   //equates to 4mhz
+//#define ILI9488_CLOCK_READ 120   //equates to 2mhz
+
+
 enum {
     ILI9488 = 0,
     ILI9486 = 1,

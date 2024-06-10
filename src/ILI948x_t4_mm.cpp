@@ -1229,7 +1229,7 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat() {
     /* Configure the timer for shift clock */
     p->TIMCMP[0] =
         (((1 * 2) - 1) << 8)     /* TIMCMP[15:8] = number of beats x 2 – 1 */
-        | ((_buad_div / 2) - 1); /* TIMCMP[7:0] = baud rate divider / 2 – 1 */
+        | ((ILI9488_CLOCK_READ / 2) - 1); /* TIMCMP[7:0] = baud rate divider / 2 – 1 */
 
     p->TIMCFG[0] =
         FLEXIO_TIMCFG_TIMOUT(0)       /* Timer output logic one when enabled and not affected by reset */
