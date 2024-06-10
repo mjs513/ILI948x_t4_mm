@@ -14,6 +14,9 @@ FLASHMEM ILI948x_t4_mm::ILI948x_t4_mm(int8_t dc, int8_t cs, int8_t rst)
 
 FLASHMEM void ILI948x_t4_mm::begin(uint8_t display_name, uint8_t buad_div) {
     // Serial.printf("Bus speed: %d Mhz \n", buad_div);
+#if 0
+  _buad_div = 240 / buad_div;
+#else  
     switch (buad_div) {
     case 2:
         _buad_div = 120;
@@ -43,6 +46,8 @@ FLASHMEM void ILI948x_t4_mm::begin(uint8_t display_name, uint8_t buad_div) {
         _buad_div = 20; // 12Mhz
         break;
     }
+#endif    
+    Serial.printf("Bus speed: %d Mhz Div: %d\n", buad_div, _buad_div);
     pinMode(_cs, OUTPUT);  // CS
     pinMode(_dc, OUTPUT);  // DC
     pinMode(_rst, OUTPUT); // RST
@@ -1138,7 +1143,7 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat_Read() {
     /* Configure the timer for shift clock */
     p->TIMCMP[0] =
         (((1 * 2) - 1) << 8) /* TIMCMP[15:8] = number of beats x 2 – 1 */
-        | (((30) / 2) - 1);  /* TIMCMP[7:0] = baud rate divider / 2 – 1 ::: 30 = 8Mhz with current controller speed */
+        | (((ILI9488_CLOCK_READ ) / 2) - 1);  /* TIMCMP[7:0] = baud rate divider / 2 – 1 ::: 30 = 8Mhz with current controller speed */
 
     p->TIMCFG[0] =
         FLEXIO_TIMCFG_TIMOUT(0)       /* Timer output logic one when enabled and not affected by reset */
@@ -1229,7 +1234,7 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat() {
     /* Configure the timer for shift clock */
     p->TIMCMP[0] =
         (((1 * 2) - 1) << 8)     /* TIMCMP[15:8] = number of beats x 2 – 1 */
-        | ((ILI9488_CLOCK_READ / 2) - 1); /* TIMCMP[7:0] = baud rate divider / 2 – 1 */
+        | ((_buad_div  / 2) - 1); /* TIMCMP[7:0] = baud rate divider / 2 – 1 */
 
     p->TIMCFG[0] =
         FLEXIO_TIMCFG_TIMOUT(0)       /* Timer output logic one when enabled and not affected by reset */
@@ -1741,8 +1746,7 @@ void ILI948x_t4_mm::readRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_
         h = _displayclipy2 - y;
 
     // We probably need to set the rectangle
-    setAddr(1, y, x + w - 1, y + h - 1);
-    Serial.println("\tAfter setAddr");
+    setAddr(x, y, x + w - 1, y + h - 1);
     // now set to ramRD command
     FlexIO_Config_SnglBeat();
     /* Assert CS, RS pins */
@@ -1757,10 +1761,11 @@ void ILI948x_t4_mm::readRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_
     while (0 == (p->TIMSTAT & (1 << 0))) {
     }
     microSecondDelay();
-    Serial.println("\tAfter RAMRD");
 
     /* De-assert RS pin */
     DCHigh();
+    microSecondDelay();
+    //delayMicroseconds(50);
 
     FlexIO_Clear_Config_SnglBeat();
     FlexIO_Config_SnglBeat_Read();
@@ -1771,6 +1776,7 @@ void ILI948x_t4_mm::readRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_
         // read in dummy bytes
         while (0 == (p->SHIFTSTAT & (1 << 3))) {
         }
+        digitalToggleFast(0);
         dummy = p->SHIFTBUFBYS[3];
         //Serial.printf("\tD%u=%x\n", i, dummy);
 
@@ -1785,18 +1791,21 @@ void ILI948x_t4_mm::readRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_
 
         while (0 == (p->SHIFTSTAT & (1U << 3))) {
         }
+        digitalToggleFast(0);
         r = (p->SHIFTBUFBYS[3] & 0xff);
 
         while (0 == (p->SHIFTSTAT & (1U << 3))) {
         }
+        digitalToggleFast(0);
         g = (p->SHIFTBUFBYS[3] & 0xff);
 
         while (0 == (p->SHIFTSTAT & (1U << 3))) {
         }
+        digitalToggleFast(0);
         b = (p->SHIFTBUFBYS[3] & 0xff);
 
-        //*pcolors++ = color565(r, g, b);
-        *pcolors++ = color565(b, g, r);
+        *pcolors++ = color565(r, g, b);
+        //*pcolors++ = color565(b, g, r);
 
         //Serial.printf("\t%u=%x\n", count_pixels, color);
     }

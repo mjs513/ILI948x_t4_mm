@@ -53,7 +53,8 @@ void setup() {
    * begin defaults to ILI9488 and 20Mhz:
    *     lcd.begin();
   */
-    tft.begin(ILI9486, 30);
+    pinMode(0, OUTPUT);  // test pin for read...
+    tft.begin(ILI9486, 8);
     tft.setBitDepth(16);
 
     //  tft.setFrameBuffer(tft_frame_buffer);
@@ -394,21 +395,22 @@ void drawTestScreen() {
 // Try a read rect and write rect
 #define BAND_WIDTH 8
 #define BAND_HEIGHT 20
-    tft.fillRect(50 + BAND_WIDTH * 0, 200, BAND_WIDTH, BAND_HEIGHT, ILI9488_RED);
-    tft.fillRect(50 + BAND_WIDTH * 1, 200, BAND_WIDTH, BAND_HEIGHT, ILI9488_GREEN);
-    tft.fillRect(50 + BAND_WIDTH * 2, 200, BAND_WIDTH, BAND_HEIGHT, ILI9488_BLUE);
-    tft.fillRect(50 + BAND_WIDTH * 3, 200, BAND_WIDTH, BAND_HEIGHT, ILI9488_BLACK);
-    tft.fillRect(50 + BAND_WIDTH * 4, 200, BAND_WIDTH, BAND_HEIGHT, ILI9488_WHITE);
-    tft.fillRect(50 + BAND_WIDTH * 5, 200, BAND_WIDTH, BAND_HEIGHT, ILI9488_YELLOW);
-    tft.fillRect(50 + BAND_WIDTH * 6, 200, BAND_WIDTH, BAND_HEIGHT, ILI9488_CYAN);
-    tft.fillRect(50 + BAND_WIDTH * 7, 200, BAND_WIDTH, BAND_HEIGHT, ILI9488_PINK);
-
-    tft.readRect(50, 200, BAND_WIDTH*8, BAND_HEIGHT, pixel_data);
+    tft.fillRect(50 + BAND_WIDTH * 0, 250, BAND_WIDTH, BAND_HEIGHT, ILI9488_RED);
+    tft.fillRect(50 + BAND_WIDTH * 1, 250, BAND_WIDTH, BAND_HEIGHT, ILI9488_GREEN);
+    tft.fillRect(50 + BAND_WIDTH * 2, 250, BAND_WIDTH, BAND_HEIGHT, ILI9488_BLUE);
+    tft.fillRect(50 + BAND_WIDTH * 3, 250, BAND_WIDTH, BAND_HEIGHT, ILI9488_BLACK);
+    tft.fillRect(50 + BAND_WIDTH * 4, 250, BAND_WIDTH, BAND_HEIGHT, ILI9488_WHITE);
+    tft.fillRect(50 + BAND_WIDTH * 5, 250, BAND_WIDTH, BAND_HEIGHT, ILI9488_YELLOW);
+    tft.fillRect(50 + BAND_WIDTH * 6, 250, BAND_WIDTH, BAND_HEIGHT, ILI9488_CYAN);
+    tft.fillRect(50 + BAND_WIDTH * 7, 250, BAND_WIDTH, BAND_HEIGHT, ILI9488_PINK);
+    //WaitForUserInput();
+    memset(pixel_data, 0, sizeof(pixel_data));
+    tft.readRect(50, 250, BAND_WIDTH*8, BAND_HEIGHT, pixel_data);
     MemoryHexDump(Serial, pixel_data, BAND_WIDTH * 8 * BAND_HEIGHT * 2, true);
     
-    tft.writeRect(50, 200 + BAND_HEIGHT * 2, BAND_WIDTH * 8, BAND_HEIGHT, pixel_data);
-    memset(pixel_data, 0, sizeof(pixel_data));
-
+    tft.writeRect(50, 300, BAND_WIDTH * 8, BAND_HEIGHT, pixel_data);
+    //WaitForUserInput();
+    
     tft.readRect(0, 0, 50, 50, pixel_data);
     MemoryHexDump(Serial, pixel_data, 1024, true);
     // For heck of it lets make sure readPixel and ReadRect
