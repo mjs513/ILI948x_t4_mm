@@ -56,7 +56,8 @@ void setup() {
     pinMode(0, OUTPUT);  // test pin for read...
     tft.begin(ILI9486, 8);
     tft.setBitDepth(16);
-
+    tft.displayInfo();
+    
     //  tft.setFrameBuffer(tft_frame_buffer);
 
     tft.setRotation(ROTATION);
@@ -406,13 +407,13 @@ void drawTestScreen() {
     //WaitForUserInput();
     memset(pixel_data, 0, sizeof(pixel_data));
     tft.readRect(50, 250, BAND_WIDTH*8, BAND_HEIGHT, pixel_data);
-    MemoryHexDump(Serial, pixel_data, BAND_WIDTH * 8 * BAND_HEIGHT * 2, true);
+//    MemoryHexDump(Serial, pixel_data, BAND_WIDTH * 8 * BAND_HEIGHT * 2, true);
     
-    tft.writeRect(50, 300, BAND_WIDTH * 8, BAND_HEIGHT, pixel_data);
+    tft.writeRect(50, 250 + BAND_HEIGHT, BAND_WIDTH * 8, BAND_HEIGHT, pixel_data);
     //WaitForUserInput();
     
     tft.readRect(0, 0, 50, 50, pixel_data);
-    MemoryHexDump(Serial, pixel_data, 1024, true);
+//    MemoryHexDump(Serial, pixel_data, 1024, true);
     // For heck of it lets make sure readPixel and ReadRect
     // give us same data, maybe check along diagnal?
     for (uint i = 0; i < 50; i++) {

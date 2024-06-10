@@ -14,9 +14,6 @@ FLASHMEM ILI948x_t4_mm::ILI948x_t4_mm(int8_t dc, int8_t cs, int8_t rst)
 
 FLASHMEM void ILI948x_t4_mm::begin(uint8_t display_name, uint8_t buad_div) {
     // Serial.printf("Bus speed: %d Mhz \n", buad_div);
-#if 0
-  _buad_div = 240 / buad_div;
-#else  
     switch (buad_div) {
     case 2:
         _buad_div = 120;
@@ -46,7 +43,6 @@ FLASHMEM void ILI948x_t4_mm::begin(uint8_t display_name, uint8_t buad_div) {
         _buad_div = 20; // 12Mhz
         break;
     }
-#endif    
     Serial.printf("Bus speed: %d Mhz Div: %d\n", buad_div, _buad_div);
     pinMode(_cs, OUTPUT);  // CS
     pinMode(_dc, OUTPUT);  // DC
@@ -1726,7 +1722,7 @@ uint16_t ILI948x_t4_mm::readPixel(int16_t x, int16_t y) {
 }
 
 void ILI948x_t4_mm::readRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *pcolors) {
-    Serial.printf("readRect(%d, %d, %d, %d, %p)\n", x, y, w, h, pcolors);
+    //Serial.printf("readRect(%d, %d, %d, %d, %p)\n", x, y, w, h, pcolors);
     // first do any clipping.
     if ((x >= _displayclipx2) || (y >= _displayclipy2))
         return;
@@ -1782,13 +1778,20 @@ void ILI948x_t4_mm::readRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_
 
     }
     /*Wait for transfer to be completed */
-
+#ifndef PIXEL_18BIT_MODE
+    // 16 bit mode
+    int count_bytes = w * h *2;
+    uint8_t *pc = (uint8_t*)pcolors;
+    while (count_bytes--) {
+        while (0 == (p->SHIFTSTAT & (1U << 3))) {
+        }
+        digitalToggleFast(0);
+        *pc++ = (p->SHIFTBUFBYS[3] & 0xff);
+    }
+#else    
     int count_pixels = w * h;
-    uint8_t r, g, b;
     while (count_pixels--) {
-        /* Enable FlexIO */
-        //p->CTRL |= FLEXIO_CTRL_FLEXEN;
-
+        uint8_t r, g, b;
         while (0 == (p->SHIFTSTAT & (1U << 3))) {
         }
         digitalToggleFast(0);
@@ -1806,10 +1809,15 @@ void ILI948x_t4_mm::readRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_
 
         *pcolors++ = color565(r, g, b);
         //*pcolors++ = color565(b, g, r);
+        static uint8_t debug_count = 50;
+        if (debug_count) {
+          debug_count--;
+          Serial.printf("%2x:%2x:%2x\n", r, g, b);
 
-        //Serial.printf("\t%u=%x\n", count_pixels, color);
+        }
     }
 
+#endif
     // Set FlexIO back to Write mode
     FlexIO_Config_SnglBeat();
 }
