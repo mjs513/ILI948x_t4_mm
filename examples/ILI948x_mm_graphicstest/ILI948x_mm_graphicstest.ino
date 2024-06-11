@@ -92,7 +92,7 @@ void loop() {
   }
   lcd.fillScreen(ILI9488_BLACK);
   delay(1000);
-  lcd.writeRect(0,0,479,319, flexio_teensy_mm); // 480x320
+  lcd.writeRect(0,0,480,320, flexio_teensy_mm); // 480x320
   delay(1000);
   lcd.fillScreen(ILI9488_BLACK);
   lcd.pushPixels16bitDMA(flexio_teensy_mm,0,0,479,319); // 480x320
