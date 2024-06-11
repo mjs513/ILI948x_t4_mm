@@ -232,6 +232,11 @@ FLASHMEM void ILI948x_t4_mm::invertDisplay(bool invert) {
     SglBeatWR_nPrm_8(invert ? ILI9488_INVON : ILI9488_INVOFF, 0, 0);
 }
 
+void ILI948x_t4_mm::setScroll(uint16_t offset)
+{
+    SglBeatWR_nPrm_8(ILI9488_VSCRSADD, offset, 1);
+}
+
 FLASHMEM void ILI948x_t4_mm::onCompleteCB(CBF callback) {
     _callback = callback;
     isCB = true;
@@ -1021,7 +1026,7 @@ FLASHMEM void ILI948x_t4_mm::displayInit(uint8_t disp_name) {
         // delay(10);
         Command = 0x29; // Display On
         SglBeatWR_nPrm_8(Command, 0, 0);
-        // delay(15);
+         delay(15);
         /*
         Command = 0x3A; // Set bit depth
         CommandValue[0U] = 0x55;

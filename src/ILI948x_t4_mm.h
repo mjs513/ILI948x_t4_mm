@@ -157,6 +157,8 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX {
     void DMAerror();
 
     /**************************************************************/
+    void setScroll(uint16_t offset);
+    
     uint16_t _previous_addr_x0 = 0xffff;
     uint16_t _previous_addr_x1 = 0xffff;
     uint16_t _previous_addr_y0 = 0xffff;
