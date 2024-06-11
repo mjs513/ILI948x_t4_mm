@@ -54,7 +54,7 @@ void setup() {
    *     lcd.begin();
   */
     pinMode(0, OUTPUT);  // test pin for read...
-    tft.begin(ILI9486, 8);
+    tft.begin(ILI9486, 16);
     tft.setBitDepth(16);
     tft.displayInfo();
     
@@ -62,6 +62,13 @@ void setup() {
 
     tft.setRotation(ROTATION);
     tft.fillScreen(ILI9488_BLACK);
+
+    delay(500);
+    tft.fillScreen(ILI9488_RED);
+    delay(500);
+    tft.fillScreen(ILI9488_GREEN);
+    delay(500);
+    tft.fillScreen(ILI9488_BLUE);
 
     //
     //  button.initButton(&tft, 200, 125, 100, 40, ILI9488_GREEN, ILI9488_YELLOW, ILI9488_RED, "UP", 1, 1);
@@ -407,7 +414,7 @@ void drawTestScreen() {
     //WaitForUserInput();
     memset(pixel_data, 0, sizeof(pixel_data));
     tft.readRect(50, 250, BAND_WIDTH*8, BAND_HEIGHT, pixel_data);
-//    MemoryHexDump(Serial, pixel_data, BAND_WIDTH * 8 * BAND_HEIGHT * 2, true);
+    MemoryHexDump(Serial, pixel_data, BAND_WIDTH * 8 * 2, true, "\nColor bars:\n");
     
     tft.writeRect(50, 250 + BAND_HEIGHT, BAND_WIDTH * 8, BAND_HEIGHT, pixel_data);
     //WaitForUserInput();

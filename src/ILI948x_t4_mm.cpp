@@ -265,6 +265,20 @@ FASTRUN void ILI948x_t4_mm::displayInfo() {
     Serial.printf("Signal Mode: 0x%02X\n", readCommand(ILI9488_RDDSM));
     uint8_t sdRes = readCommand(ILI9488_RDSELFDIAG);
     Serial.printf("Self Diagnostic: %s (0x%02X)\n", sdRes == 0xc0 ? "OK" : "Failed", sdRes);
+    Serial.printf("Device Information: %06X\n", readCommandN(ILI9488_RDDID, 3));
+    uint32_t device_status = readCommandN(ILI9488_RDDST, 4);
+    Serial.printf("Device Status: %08X\n", device_status);
+    Serial.printf("\tOrder: %s\n", (device_status & (1 << 26))? "BGR" : "RGB");
+    Serial.print("\tinterface pixel format: ");
+    switch ((device_status >> 20) & 0x7) {
+    case 0x5: Serial.println("16 bit"); break;
+    case 0x6: Serial.println("18 bit"); break;
+    case 0x7: Serial.println("24 bit"); break;
+    default: Serial.println("????");
+
+    }
+
+
     CSHigh();
 }
 
@@ -1204,6 +1218,49 @@ FASTRUN uint8_t ILI948x_t4_mm::readCommand(uint8_t const cmd) {
     return data;
 };
 
+// Note we could combine the above with thsi.
+FASTRUN uint32_t ILI948x_t4_mm::readCommandN(uint8_t const cmd, uint8_t count_bytes) {
+    while (WR_DMATransferDone == false) {
+        // Wait for any DMA transfers to complete
+    }
+
+    FlexIO_Config_SnglBeat();
+    DCLow();
+
+    /* Write command index */
+    p->SHIFTBUF[0] = cmd;
+
+    /*Wait for transfer to be completed */
+    while (0 == (p->SHIFTSTAT & (1 << 0))) {
+    }
+    while (0 == (p->TIMSTAT & (1 << 0))) {
+    }
+
+    /* De-assert RS pin */
+    microSecondDelay();
+    DCHigh();
+
+    FlexIO_Clear_Config_SnglBeat();
+    FlexIO_Config_SnglBeat_Read();
+
+    uint8_t dummy = 0;
+    uint32_t data = 0;
+
+    while (0 == (p->SHIFTSTAT & (1 << 3))) {
+    }
+    dummy = p->SHIFTBUFBYS[3];
+
+    while (count_bytes--) {
+      while (0 == (p->SHIFTSTAT & (1 << 3))) {
+      }
+      data = (data << 8) | (p->SHIFTBUFBYS[3] & 0xff);
+    }
+    // Serial.printf("Dummy 0x%x, data 0x%x\n", dummy, data);
+
+    // Set FlexIO back to Write mode
+    FlexIO_Config_SnglBeat();
+    return data;
+};
 FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat() {
 
     p->CTRL &= ~FLEXIO_CTRL_FLEXEN;
