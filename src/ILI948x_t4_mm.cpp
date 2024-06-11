@@ -14,6 +14,9 @@ FLASHMEM ILI948x_t4_mm::ILI948x_t4_mm(int8_t dc, int8_t cs, int8_t rst)
 
 FLASHMEM void ILI948x_t4_mm::begin(uint8_t display_name, uint8_t buad_div) {
     // Serial.printf("Bus speed: %d Mhz \n", buad_div);
+    
+    _display_name = display_name;
+    
     switch (buad_div) {
     case 2:
         _buad_div = 120;
@@ -1835,51 +1838,46 @@ void ILI948x_t4_mm::readRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_
 
     }
     /*Wait for transfer to be completed */
-#ifndef PIXEL_18BIT_MODE
-    // 16 bit mode
+    if(_display_name != ILI9488) {
+      // 16 bit mode
+      int count_pixels = w * h;
+      uint8_t *pc = (uint8_t*)pcolors;
+      delayMicroseconds(50);
+      while (count_pixels--) {
+          while (0 == (p->SHIFTSTAT & (1U << 3))) {
+          }
+          digitalToggleFast(0);
+          uint8_t b1 = (p->SHIFTBUFBYS[3] & 0xff);
+
+          while (0 == (p->SHIFTSTAT & (1U << 3))) {
+          }
+          digitalToggleFast(0);
+          *pc++ = (p->SHIFTBUFBYS[3] & 0xff);
+          *pc++ = b1;
+      }
+    } else {
     int count_pixels = w * h;
-    uint8_t *pc = (uint8_t*)pcolors;
-    while (count_pixels--) {
-        while (0 == (p->SHIFTSTAT & (1U << 3))) {
-        }
-        digitalToggleFast(0);
-        uint8_t b1 = (p->SHIFTBUFBYS[3] & 0xff);
-        while (0 == (p->SHIFTSTAT & (1U << 3))) {
-        }
-        digitalToggleFast(0);
-        *pc++ = (p->SHIFTBUFBYS[3] & 0xff);
-        *pc++ = b1;
-    }
-#else    
-    int count_pixels = w * h;
-    while (count_pixels--) {
-        uint8_t r, g, b;
-        while (0 == (p->SHIFTSTAT & (1U << 3))) {
-        }
-        digitalToggleFast(0);
-        r = (p->SHIFTBUFBYS[3] & 0xff);
+      while (count_pixels--) {
+          uint8_t r, g, b;
+          while (0 == (p->SHIFTSTAT & (1U << 3))) {
+          }
+          digitalToggleFast(0);
+          r = (p->SHIFTBUFBYS[3] & 0xff);
 
-        while (0 == (p->SHIFTSTAT & (1U << 3))) {
-        }
-        digitalToggleFast(0);
-        g = (p->SHIFTBUFBYS[3] & 0xff);
+          while (0 == (p->SHIFTSTAT & (1U << 3))) {
+          }
+          digitalToggleFast(0);
+          g = (p->SHIFTBUFBYS[3] & 0xff);
 
-        while (0 == (p->SHIFTSTAT & (1U << 3))) {
-        }
-        digitalToggleFast(0);
-        b = (p->SHIFTBUFBYS[3] & 0xff);
+          while (0 == (p->SHIFTSTAT & (1U << 3))) {
+          }
+          digitalToggleFast(0);
+          b = (p->SHIFTBUFBYS[3] & 0xff);
 
-        *pcolors++ = color565(r, g, b);
-        //*pcolors++ = color565(b, g, r);
-        static uint8_t debug_count = 50;
-        if (debug_count) {
-          debug_count--;
-          Serial.printf("%2x:%2x:%2x\n", r, g, b);
-
-        }
+          *pcolors++ = color565(r, g, b);
+      }
     }
 
-#endif
     // Set FlexIO back to Write mode
     FlexIO_Config_SnglBeat();
 }
