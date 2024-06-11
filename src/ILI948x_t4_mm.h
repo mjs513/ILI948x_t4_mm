@@ -106,10 +106,9 @@
 */
 
 /****************************************************************************************/
-
+//#define ILI9488_CLOCK_READ 30   //equates to 8mhz
 #define ILI9488_CLOCK_READ 60   //equates to 4mhz
 //#define ILI9488_CLOCK_READ 120   //equates to 2mhz
-
 
 enum {
     ILI9488 = 0,
@@ -201,6 +200,7 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX {
 
   protected:
   private:
+    uint8_t _display_name = 0;
     FlexIOHandler *pFlex;
     IMXRT_FLEXIO_t *p;
     const FlexIOHandler::FLEXIO_Hardware_t *hw;
