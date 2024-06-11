@@ -146,6 +146,7 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX {
     void pushPixels16bitDMA(const uint16_t *pcolors, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
 
     uint8_t readCommand(uint8_t const cmd);
+    uint32_t readCommandN(uint8_t const cmd, uint8_t count_bytes);
 
     // Added functions to read pixel data...
     uint16_t readPixel(int16_t x, int16_t y);
