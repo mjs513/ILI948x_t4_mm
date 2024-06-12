@@ -31,8 +31,6 @@ Note: The are FLEXIO 2 pins on the Micromod The flexio pins shown in ()
 * pin 6 - D6 (10)
 * pin 9 - D7 (11)
    
-Wire the RD pin on the LCD to 3.3v
-
 in the setup function call:
 ```
 ILI948x_t4_mm::begin();
