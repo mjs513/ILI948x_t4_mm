@@ -234,7 +234,8 @@ FLASHMEM void ILI948x_t4_mm::invertDisplay(bool invert) {
 
 void ILI948x_t4_mm::setScroll(uint16_t offset)
 {
-    SglBeatWR_nPrm_8(ILI9488_VSCRSADD, offset, 1);
+//    SglBeatWR_nPrm_8(ILI9488_VSCRSADD, offset, 1); // Changed, offset is 
+    SglBeatWR_nPrm_16(ILI9488_VSCRSADD, &offset, 1);  // a pointer to a 16 bit value.
 }
 
 FLASHMEM void ILI948x_t4_mm::onCompleteCB(CBF callback) {
