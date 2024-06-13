@@ -1,4 +1,6 @@
 #include "ILI948x_t4_mm.h"
+#include "ILI948x_t4_mm_default_flexio_pins.h"
+
 // DMAMEM uint32_t framebuff[DATABUFBYTES];
 
 #if !defined(ARDUINO_TEENSY_MICROMOD)
@@ -125,6 +127,19 @@ FLASHMEM ILI948x_t4_mm::ILI948x_t4_mm(int8_t dc, int8_t cs, int8_t rst)
     _dc = dc;
     _cs = cs;
     _rst = rst;
+
+
+    // Note most of this could be at compile time...
+    _data_pins[0] = DISPLAY_D0;
+    _data_pins[1] = DISPLAY_D1;
+    _data_pins[2] = DISPLAY_D2;
+    _data_pins[3] = DISPLAY_D3;
+    _data_pins[4] = DISPLAY_D4;
+    _data_pins[5] = DISPLAY_D5;
+    _data_pins[6] = DISPLAY_D6;
+    _data_pins[7] = DISPLAY_D7;
+    _wr_pin = DISPLAY_WR;
+    _rd_pin = DISPLAY_RD;
 }
 
 FLASHMEM void ILI948x_t4_mm::begin(uint8_t display_name, uint8_t buad_div) {
@@ -544,65 +559,64 @@ FASTRUN void ILI948x_t4_mm::microSecondDelay() {
 }
 
 FASTRUN void ILI948x_t4_mm::gpioWrite() {
-    pFlex->setIOPinToFlexMode(10);
-    pinMode(12, OUTPUT);
-    digitalWriteFast(12, HIGH);
+    pFlex->setIOPinToFlexMode(_wr_pin);
+    pinMode(_rd_pin, OUTPUT);
+    digitalWriteFast(_rd_pin, HIGH);
 }
 
 FASTRUN void ILI948x_t4_mm::gpioRead() {
-    pFlex->setIOPinToFlexMode(12);
-    pinMode(10, OUTPUT);
-    digitalWriteFast(10, HIGH);
+    pFlex->setIOPinToFlexMode(_rd_pin);
+    pinMode(_wr_pin, OUTPUT);
+    digitalWriteFast(_wr_pin, HIGH);
 }
 
 FASTRUN void ILI948x_t4_mm::FlexIO_Init() {
     /* Get a FlexIO channel */
-    pFlex = FlexIOHandler::flexIOHandler_list[1]; // use FlexIO2
+    // lets assume D0 is the valid one...
+    pFlex = FlexIOHandler::mapIOPinToFlexIOHandler(_data_pins[0], _flexio_D0);
+    //pFlex = FlexIOHandler::flexIOHandler_list[1]; // use FlexIO2
     /* Pointer to the port structure in the FlexIO channel */
     p = &pFlex->port();
     /* Pointer to the hardware structure in the FlexIO channel */
     hw = &pFlex->hardware();
-    /* Basic pin setup */
-    pinMode(10, OUTPUT); // FlexIO2:0 WR
-    pinMode(12, OUTPUT); // FlexIO2:1 RD
-    pinMode(40, OUTPUT); // FlexIO2:4 D0
-    pinMode(41, OUTPUT); // FlexIO2:5 |
-    pinMode(42, OUTPUT); // FlexIO2:6 |
-    pinMode(43, OUTPUT); // FlexIO2:7 |
-    pinMode(44, OUTPUT); // FlexIO2:8 |
-    pinMode(45, OUTPUT); // FlexIO2:9 |
-    pinMode(6, OUTPUT);  // FlexIO2:10 |
-    pinMode(9, OUTPUT);  // FlexIO2:11 D7
 
-    digitalWriteFast(10, HIGH);
+    // lets dos some quick validation of the pins.
+    for (uint8_t i = 1; i < 8; i++) {
+      uint8_t flexio_pin = pFlex->mapIOPinToFlexPin(_data_pins[i]);
+      if (flexio_pin != (_flexio_D0 + i)) {
+        Serial.printf("ILI948x_t4_mm::FlexIO_Ini - Flex IO Data pins pin issue D0(%u), D%u(%u)\n", _flexio_D0, i, flexio_pin);
+      }
+    }
+    
+    _flexio_WR = pFlex->mapIOPinToFlexPin(_wr_pin);
+    _flexio_RD = pFlex->mapIOPinToFlexPin(_rd_pin);
+
+    if ((_flexio_WR == 0xff) ||  (_flexio_RD == 0xff)) {
+      Serial.printf("ILI948x_t4_mm::FlexIO_Ini - RD/WR pin issue: WR:%u(%u) RD:%u(%u)\n", _wr_pin, _flexio_WR, _rd_pin, _flexio_RD);
+    }
+
+
+    /* Basic pin setup */
+    pinMode(_wr_pin, OUTPUT); // FlexIO2:0 WR
+    pinMode(_rd_pin, OUTPUT); // FlexIO2:1 RD
+
+    for (uint8_t pin_index = 0; pin_index < 8; pin_index++) {
+      pinMode(_data_pins[pin_index], OUTPUT);
+      *(portControlRegister(_data_pins[pin_index])) = 0xFF;
+      pFlex->setIOPinToFlexMode(_data_pins[pin_index]);
+    }
+
+    digitalWriteFast(_wr_pin, HIGH);
+    *(portControlRegister(_wr_pin)) = 0xFF;
 
     /* High speed and drive strength configuration */
-    *(portControlRegister(10)) = 0xFF;
-    *(portControlRegister(12)) = 0xFF;
-    *(portControlRegister(40)) = 0xFF;
-    *(portControlRegister(41)) = 0xFF;
-    *(portControlRegister(42)) = 0xFF;
-    *(portControlRegister(43)) = 0xFF;
-    *(portControlRegister(44)) = 0xFF;
-    *(portControlRegister(45)) = 0xFF;
-    *(portControlRegister(6)) = 0xFF;
-    *(portControlRegister(9)) = 0xFF;
+    *(portControlRegister(_rd_pin)) = 0xFF;
 
     /* Set clock */
     pFlex->setClockSettings(3, 1, 0); // (480 MHz source, 1+1, 1+0) >> 480/2/1 >> 240Mhz
 
-    /* Set up pin mux */
-    pFlex->setIOPinToFlexMode(10);
-    pFlex->setIOPinToFlexMode(40);
-    pFlex->setIOPinToFlexMode(41);
-    pFlex->setIOPinToFlexMode(42);
-    pFlex->setIOPinToFlexMode(43);
-    pFlex->setIOPinToFlexMode(44);
-    pFlex->setIOPinToFlexMode(45);
-    pFlex->setIOPinToFlexMode(6);
-    pFlex->setIOPinToFlexMode(9);
-
-    digitalWriteFast(12, HIGH);
+    // Read pin starts off as normal IO pin.
+    digitalWriteFast(_rd_pin, HIGH);
 
     /* Enable the clock */
     hw->clock_gate_register |= hw->clock_gate_mask;
@@ -629,7 +643,7 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat_Read() {
         FLEXIO_SHIFTCTL_TIMSEL(0)           /* Shifter's assigned timer index */
         | FLEXIO_SHIFTCTL_TIMPOL * (1)      /* Shift on posedge of shift clock */
         | FLEXIO_SHIFTCTL_PINCFG(0)         /* Shifter's pin configured as input */
-        | FLEXIO_SHIFTCTL_PINSEL(4) /*D0 */ /* Shifter's pin start index */
+        | FLEXIO_SHIFTCTL_PINSEL(_flexio_D0) /*D0 */ /* Shifter's pin start index */
         | FLEXIO_SHIFTCTL_PINPOL * (0)      /* Shifter's pin active high */
         | FLEXIO_SHIFTCTL_SMOD(1);          /* Shifter mode as recieve */
 
@@ -652,7 +666,7 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat_Read() {
         | FLEXIO_TIMCTL_TRGPOL * (1)           /* Timer trigger polarity as active low */
         | FLEXIO_TIMCTL_TRGSRC * (1)           /* Timer trigger source as internal */
         | FLEXIO_TIMCTL_PINCFG(3)              /* Timer' pin configured as output */
-        | FLEXIO_TIMCTL_PINSEL(1)              /* Timer' pin index: WR pin */
+        | FLEXIO_TIMCTL_PINSEL(_flexio_RD)     /* Timer' pin index: RD pin */
         | FLEXIO_TIMCTL_PINPOL * (1)           /* Timer' pin active low */
         | FLEXIO_TIMCTL_TIMOD(1);              /* Timer mode as dual 8-bit counters baud/bit */
 
@@ -763,7 +777,7 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat() {
         FLEXIO_SHIFTCTL_TIMSEL(0)      /* Shifter's assigned timer index */
         | FLEXIO_SHIFTCTL_TIMPOL * (0) /* Shift on posedge of shift clock */
         | FLEXIO_SHIFTCTL_PINCFG(3)    /* Shifter's pin configured as output */
-        | FLEXIO_SHIFTCTL_PINSEL(4)    /* Shifter's pin start index */
+        | FLEXIO_SHIFTCTL_PINSEL(_flexio_D0)    /* Shifter's pin start index */
         | FLEXIO_SHIFTCTL_PINPOL * (0) /* Shifter's pin active high */
         | FLEXIO_SHIFTCTL_SMOD(2);     /* Shifter mode as transmit */
 
@@ -786,7 +800,7 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat() {
         | FLEXIO_TIMCTL_TRGPOL * (1)           /* Timer trigger polarity as active low */
         | FLEXIO_TIMCTL_TRGSRC * (1)           /* Timer trigger source as internal */
         | FLEXIO_TIMCTL_PINCFG(3)              /* Timer' pin configured as output */
-        | FLEXIO_TIMCTL_PINSEL(0)              /* Timer' pin index: WR pin */
+        | FLEXIO_TIMCTL_PINSEL(_flexio_WR)     /* Timer' pin index: WR pin */
         | FLEXIO_TIMCTL_PINPOL * (1)           /* Timer' pin active low */
         | FLEXIO_TIMCTL_TIMOD(1);              /* Timer mode as dual 8-bit counters baud/bit */
 
@@ -833,7 +847,7 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_MultiBeat() {
         FLEXIO_SHIFTCTL_TIMSEL(0)       /* Shifter's assigned timer index */
         | FLEXIO_SHIFTCTL_TIMPOL * (0U) /* Shift on posedge of shift clock */
         | FLEXIO_SHIFTCTL_PINCFG(3U)    /* Shifter's pin configured as output */
-        | FLEXIO_SHIFTCTL_PINSEL(4)     /* Shifter's pin start index */
+        | FLEXIO_SHIFTCTL_PINSEL(_flexio_D0)     /* Shifter's pin start index */
         | FLEXIO_SHIFTCTL_PINPOL * (0U) /* Shifter's pin active high */
         | FLEXIO_SHIFTCTL_SMOD(2U);     /* shifter mode transmit */
 
@@ -842,7 +856,7 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_MultiBeat() {
             FLEXIO_SHIFTCTL_TIMSEL(0)       /* Shifter's assigned timer index */
             | FLEXIO_SHIFTCTL_TIMPOL * (0U) /* Shift on posedge of shift clock */
             | FLEXIO_SHIFTCTL_PINCFG(0U)    /* Shifter's pin configured as output disabled */
-            | FLEXIO_SHIFTCTL_PINSEL(4)     /* Shifter's pin start index */
+            | FLEXIO_SHIFTCTL_PINSEL(_flexio_D0)     /* Shifter's pin start index */
             | FLEXIO_SHIFTCTL_PINPOL * (0U) /* Shifter's pin active high */
             | FLEXIO_SHIFTCTL_SMOD(2U);     /* shifter mode transmit */
     }
@@ -865,7 +879,7 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_MultiBeat() {
         | FLEXIO_TIMCTL_TRGPOL * (1U)       /* Timer trigger polarity as active low */
         | FLEXIO_TIMCTL_TRGSRC * (1U)       /* Timer trigger source as internal */
         | FLEXIO_TIMCTL_PINCFG(3U)          /* Timer' pin configured as output */
-        | FLEXIO_TIMCTL_PINSEL(0)           /* Timer' pin index: WR pin */
+        | FLEXIO_TIMCTL_PINSEL(_flexio_WR)  /* Timer' pin index: WR pin */
         | FLEXIO_TIMCTL_PINPOL * (1U)       /* Timer' pin active low */
         | FLEXIO_TIMCTL_TIMOD(1U);          /* Timer mode 8-bit baud counter */
 

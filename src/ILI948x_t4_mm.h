@@ -229,6 +229,11 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX {
     // int16_t _width, _height;
     int8_t _dc, _cs, _rst;
 
+    // The Teensy IO pins used for data and Read and Write
+    int8_t _data_pins[8], _wr_pin, _rd_pin;
+
+    uint8_t _flexio_D0, _flexio_WR, _flexio_RD; // which flexio pins do they map to
+
     uint8_t _dummy;
     uint8_t _curMADCTL;
 
