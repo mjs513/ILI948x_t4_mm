@@ -27,7 +27,7 @@ uint8_t use_fb = 0;
 #define ORIGIN_TEST_X 50
 #define ORIGIN_TEST_Y 50
 
-ILI948x_t4_mm tft = ILI948x_t4_mm(13, 11, 7);  //(dc, cs, rst, rd)
+ILI948x_t4_mm tft = ILI948x_t4_mm(13, 11, 5);  //(dc, cs, rst)
 
 void setup() {
     while (!Serial && (millis() < 4000))
@@ -39,6 +39,7 @@ void setup() {
         WaitForUserInput();
     }
 //Serial.printf("Begin: CS:%d, DC:%d, MOSI:%d, MISO: %d, SCK: %d, RST: %d\n", TFT_CS, TFT_DC, TFT_MOSI, TFT_MISO, TFT_SCK, TFT_RST);
+    Serial.println("\n*** Sketch Startup ***");
 #ifdef TFT_TOUCH_CS
     pinMode(TFT_TOUCH_CS, OUTPUT);
     digitalWrite(TFT_TOUCH_CS, HIGH);
@@ -53,8 +54,11 @@ void setup() {
    * begin defaults to ILI9488 and 20Mhz:
    *     lcd.begin();
   */
-    pinMode(0, OUTPUT);  // test pin for read...
-    tft.begin(ILI9486, 16);
+    tft.setFlexIOPins(7, 8);
+//    tft.setFlexIOPins(7, 8, 40);
+//    tft.setFlexIOPins(7, 8, 40, 41, 42, 43, 44, 45, 6, 9);
+    Serial.println("After setflexio pins"); Serial.flush();
+    tft.begin(ILI9486, 12);
     tft.setBitDepth(16);
     tft.displayInfo();
     

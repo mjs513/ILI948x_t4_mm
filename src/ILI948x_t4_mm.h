@@ -76,9 +76,9 @@
 #define ILI9488_CABCCTRL1 0xC6 // CABC Control 1
 #define ILI9488_CABCCTRL2 0xC8 // CABC Control 2
 
-#define ILI9488_NVMEMWR 0xD0  // NV Memory Write 
-#define ILI9488_NVMEMPROTKEY  0xD1  //NV Memory Protection Key
-#define ILI9488_NVMEMSTATRD 0xD2  //NV Memory Status Read
+#define ILI9488_NVMEMWR 0xD0      // NV Memory Write
+#define ILI9488_NVMEMPROTKEY 0xD1 // NV Memory Protection Key
+#define ILI9488_NVMEMSTATRD 0xD2  // NV Memory Status Read
 
 #define ILI9488_PGAMCTRL 0xE0 // Positive Gamma Control
 #define ILI9488_NGAMCTRL 0xE1 // Negative Gamma Control
@@ -131,6 +131,15 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX {
     void begin(uint8_t display_name = ILI9488, uint8_t buad_div = 20);
     uint8_t getBusSpd();
 
+    // If used this must be called before begin
+    // Set the FlexIO pins.  The first version you can specify just the wr, and read and optionsl first Data.
+    // it will use information in the Flexio library to fill in d1-d7
+    bool setFlexIOPins(uint8_t write_pin, uint8_t rd_pin, uint8_t tft_d0 = 0xff);
+
+    // Set the FlexIO pins.  Specify all of the pins for 8 bit mode. Must be called before begin
+    bool setFlexIOPins(uint8_t write_pin, uint8_t rd_pin, uint8_t d0, uint8_t d1, uint8_t d2, uint8_t d3,
+                       uint8_t d4, uint8_t d5, uint8_t d6, uint8_t d7);
+
     uint8_t setBitDepth(uint8_t bitDepth);
     uint8_t getBitDepth();
 
@@ -164,7 +173,7 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX {
 
     /**************************************************************/
     void setScroll(uint16_t offset);
-    
+
     uint16_t _previous_addr_x0 = 0xffff;
     uint16_t _previous_addr_x1 = 0xffff;
     uint16_t _previous_addr_y0 = 0xffff;
@@ -230,7 +239,7 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX {
     int8_t _dc, _cs, _rst;
 
     // The Teensy IO pins used for data and Read and Write
-    int8_t _data_pins[8], _wr_pin, _rd_pin;
+    uint8_t _data_pins[8], _wr_pin, _rd_pin;
 
     uint8_t _flexio_D0, _flexio_WR, _flexio_RD; // which flexio pins do they map to
 

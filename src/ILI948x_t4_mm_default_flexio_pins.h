@@ -5,8 +5,8 @@
 #if defined(ARDUINO_TEENSY_MICROMOD)
 // FLEXIO2 pins.
 
-#define DISPLAY_WR 10  // FLEXIO2:0
-#define DISPLAY_RD 12  // FLEXIO2:1
+#define DISPLAY_WR 10 // FLEXIO2:0
+#define DISPLAY_RD 12 // FLEXIO2:1
 
 #define DISPLAY_D0 40 // 40      B0_04   FlexIO2:4
 #define DISPLAY_D1 41 // 41      B0_05   FlexIO2:5

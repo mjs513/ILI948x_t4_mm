@@ -9,144 +9,122 @@
 
 //--------------------------------------------------
 PROGMEM const uint8_t ILI9488_init_commands[] = {
-  1, 120, 0x01, // SW RST
-  1, 15, 0x11, // Exit sleep
-  1, 15, 0x28, // Display Off
-  3, 0, 0xC0, 0x19, 0x1A,
-  3, 0, 0xC1,0x45,0x00,
-  2, 0, 0xC2, 0x33,
-  4, 0, 0xC5,0x00,0x12,0x80,
-  2, 0, 0xB4, 0x02,
-  4, 0, 0xB6,0x00,0x02,0x3B,
-  2, 0, 0xB7,0x07,
-  16, 0, 0xE0,0x00,0x03,0x09,0x08,0x16,0x0A,0x3F,0x78,0x4C,0x09,0x0A,0x08,0x16,0x1A,0x0F,
-  16, 0, 0xE1,0x00,0x16,0x19,0x03,0x0F,0x05,0x32,0x45,0x46,0x04,0x0E,0x0D,0x35,0x37,0x0F,
-  2, 10, 0x36, 0x48,
-  1, 120, 0x29, // Display On
-  0
-};
-
+    1, 120, 0x01, // SW RST
+    1, 15, 0x11,  // Exit sleep
+    1, 15, 0x28,  // Display Off
+    3, 0, 0xC0, 0x19, 0x1A,
+    3, 0, 0xC1, 0x45, 0x00,
+    2, 0, 0xC2, 0x33,
+    4, 0, 0xC5, 0x00, 0x12, 0x80,
+    2, 0, 0xB4, 0x02,
+    4, 0, 0xB6, 0x00, 0x02, 0x3B,
+    2, 0, 0xB7, 0x07,
+    16, 0, 0xE0, 0x00, 0x03, 0x09, 0x08, 0x16, 0x0A, 0x3F, 0x78, 0x4C, 0x09, 0x0A, 0x08, 0x16, 0x1A, 0x0F,
+    16, 0, 0xE1, 0x00, 0x16, 0x19, 0x03, 0x0F, 0x05, 0x32, 0x45, 0x46, 0x04, 0x0E, 0x0D, 0x35, 0x37, 0x0F,
+    2, 10, 0x36, 0x48,
+    1, 120, 0x29, // Display On
+    0};
 
 PROGMEM const uint8_t ILI9486_init_commands[] = {
-  1, 120, 0x01,
-  1, 20, 0x11, // Sleep out, also SW reset
-  2, 0, 0x3A, 0x55,
-  2, 0, 0xC2, 0x44,
-  5, 0, 0xC5, 0x00, 0x00, 0x00, 0x00,
-  16, 0, 0xE0, 0x0F,0x1F,0x1C,0x0C,0x0C,0x08,0x48,0x98,0x37,0x0A,0x13,0x04,0x11,0x0D,0x00,
-  16, 0, 0xE1,0x0F,0x32,0x2E,0x0B,0x0D,0x05,0x47,0x75,0x37,0x06,0x10,0x03,0x24,0x20,0x00,
-  2, 0, 0x36, 0x48,
-  1, 0, 0x20,
-  1, 120, 0x29, // Display ON
-  0
-};
+    1, 120, 0x01,
+    1, 20, 0x11, // Sleep out, also SW reset
+    2, 0, 0x3A, 0x55,
+    2, 0, 0xC2, 0x44,
+    5, 0, 0xC5, 0x00, 0x00, 0x00, 0x00,
+    16, 0, 0xE0, 0x0F, 0x1F, 0x1C, 0x0C, 0x0C, 0x08, 0x48, 0x98, 0x37, 0x0A, 0x13, 0x04, 0x11, 0x0D, 0x00,
+    16, 0, 0xE1, 0x0F, 0x32, 0x2E, 0x0B, 0x0D, 0x05, 0x47, 0x75, 0x37, 0x06, 0x10, 0x03, 0x24, 0x20, 0x00,
+    2, 0, 0x36, 0x48,
+    1, 0, 0x20,
+    1, 120, 0x29, // Display ON
+    0};
 
 PROGMEM const uint8_t ILI9481_1_init_commands[] = {
-  1, 120, ILI9488_SWRESET,
-  1, 20, ILI9488_SLPOUT,
-  4, 0, ILI9488_NVMEMWR, 0x07, 0x41, 0x1D,
-  4, 0, ILI9488_NVMEMPROTKEY, 0x00, 0x2B, 0x1F,
-  3, 0, ILI9488_NVMEMSTATRD, 0x01, 0x11 ,
-  7, 0, ILI9488_PWCTR1,	0x10,	0x3B,	0x00,	0x02,	0x11,	0x00,
-  2, 0, ILI9488_VMCTR1, 0x03,
-  2, 0, ILI9488_CABCCTRL1, 0x80,
-  13, 0, ILI9488_CABCCTRL2,	0x00,	0x14,	0x33,	0x10,	0x00,	0x16,	0x44,	0x36,	0x77,	0x00,	0x0F,	0x00,
-  2, 0, 0xB0, 0x00,
-  2, 0, 0xE4, 0xA0,
-  2, 0, 0xF0, 0x08,
-  3, 0, 0xF3, 0x40, 0x0A,
-  1, 0, 0xF6, 0x84,
-  1, 0, ILI9488_ADJCTL3, 0x80,
-  5, 0, ILI9488_FRMCTR3,	0x00,	0x01,	0x06,	0x30,
-  1, 0, ILI9488_INVCTR, 0x00,
-  2, 0, ILI9488_RDCOLMOD, 0x00, 0x55,
-  2, 0, ILI9488_MADCTL, 0x48,
-  2, 0, ILI9488_COLMOD, 0x55,
-  1, 120, ILI9488_INVON,
-  1, 120, ILI9488_DISPON,
-  0
-};
+    1, 120, ILI9488_SWRESET,
+    1, 20, ILI9488_SLPOUT,
+    4, 0, ILI9488_NVMEMWR, 0x07, 0x41, 0x1D,
+    4, 0, ILI9488_NVMEMPROTKEY, 0x00, 0x2B, 0x1F,
+    3, 0, ILI9488_NVMEMSTATRD, 0x01, 0x11,
+    7, 0, ILI9488_PWCTR1, 0x10, 0x3B, 0x00, 0x02, 0x11, 0x00,
+    2, 0, ILI9488_VMCTR1, 0x03,
+    2, 0, ILI9488_CABCCTRL1, 0x80,
+    13, 0, ILI9488_CABCCTRL2, 0x00, 0x14, 0x33, 0x10, 0x00, 0x16, 0x44, 0x36, 0x77, 0x00, 0x0F, 0x00,
+    2, 0, 0xB0, 0x00,
+    2, 0, 0xE4, 0xA0,
+    2, 0, 0xF0, 0x08,
+    3, 0, 0xF3, 0x40, 0x0A,
+    1, 0, 0xF6, 0x84,
+    1, 0, ILI9488_ADJCTL3, 0x80,
+    5, 0, ILI9488_FRMCTR3, 0x00, 0x01, 0x06, 0x30,
+    1, 0, ILI9488_INVCTR, 0x00,
+    2, 0, ILI9488_RDCOLMOD, 0x00, 0x55,
+    2, 0, ILI9488_MADCTL, 0x48,
+    2, 0, ILI9488_COLMOD, 0x55,
+    1, 120, ILI9488_INVON,
+    1, 120, ILI9488_DISPON,
+    0};
 
 PROGMEM const uint8_t ILI9481_2_init_commands[] = {
-  1, 150, 0x01,
-  2, 150, 0x11,
-  3, 150, 0xd0, 0x07, 0x44, 0x1E,
-  3, 0, 0xd1, 0x00, 0x0C, 0x1A ,
-  4, 0, 0xC5, 0x03,
-  3, 0, 0xd2, 0x01, 0x11,
-  2, 0, 0xE4, 0xa0,
-  3, 0, 0xf3, 0x00, 0x2a,
-  13, 0, 0xc8,	0x00,	0x26,	0x21,	0x00,	0x00,	0x1f,	0x65,	0x23,	0x77,	0x00,	0x0f,	0x00,
-  6, 0, 0xC0, 0x00, 0x3B, 0x00, 0x02, 0x11 ,
-  2, 0, 0xc6, 0x83,
-  2, 0, 0xf0, 0x01,
-  2, 0, 0xE4, 0xa0,
-  2, 0, 0x36, 0x8C,
-  2, 0, 0x3a, 0x55,
-  5, 255, 0xb4, 0x02, 0x00, 0x00, 0x01,
-  5, 0, 0x2a,	0x00,	0x00,	0x01, 0x3F,
-  5, 10, 0x2b, 0x00, 0x00, 0x01, 0xDf,
-  1, 0, 0x29,
-  1, 120, 0x2c,
-  0
-};
-
+    1, 150, 0x01,
+    2, 150, 0x11,
+    3, 150, 0xd0, 0x07, 0x44, 0x1E,
+    3, 0, 0xd1, 0x00, 0x0C, 0x1A,
+    4, 0, 0xC5, 0x03,
+    3, 0, 0xd2, 0x01, 0x11,
+    2, 0, 0xE4, 0xa0,
+    3, 0, 0xf3, 0x00, 0x2a,
+    13, 0, 0xc8, 0x00, 0x26, 0x21, 0x00, 0x00, 0x1f, 0x65, 0x23, 0x77, 0x00, 0x0f, 0x00,
+    6, 0, 0xC0, 0x00, 0x3B, 0x00, 0x02, 0x11,
+    2, 0, 0xc6, 0x83,
+    2, 0, 0xf0, 0x01,
+    2, 0, 0xE4, 0xa0,
+    2, 0, 0x36, 0x8C,
+    2, 0, 0x3a, 0x55,
+    5, 255, 0xb4, 0x02, 0x00, 0x00, 0x01,
+    5, 0, 0x2a, 0x00, 0x00, 0x01, 0x3F,
+    5, 10, 0x2b, 0x00, 0x00, 0x01, 0xDf,
+    1, 0, 0x29,
+    1, 120, 0x2c,
+    0};
 
 PROGMEM const uint8_t R61519_init_commands[] = {
-  1, 120, 0x01,
-  1, 20, 0x11,
-  2, 2, 0xB0, 0x04,
-  16, 0, 0xB8,0x02,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
-  5, 0, 0xB9,0x01,0x00,0xff,0x18,
-  6, 2, 0xB3, 0x00, 0x00, 0x00, 0x00,
-  2, 0, 0xB4, 0x00,
-  9, 0, 0xC0,0x03,0xDF,0x40,0x10,0x00,0x01,0x00,0x55,
-  6, 0, 0xC1,0x07,0x27,0x08,0x08,0x00,
-  5, 0, 0xC4,0x57,0x00,0x05,0x03,
-  2, 0, 0xC6, 0x04,
-  25, 0, 0xC8,0x03,0x12,0x1A,0x24,0x32,0x4B,0x3B,0x29,0x1F,0x18,0x12,0x04,0x03,0x12,0x1A,0x24,0x32,0x4B,0x3B,0x29,0x1F,0x18,0x12,0x04,
-  25, 0, 0xC9,0x03,0x12,0x1A,0x24,0x32,0x4B,0x3B,0x29,0x1F,0x18,0x12,0x04,0x03,0x12,0x1A,0x24,0x32,0x4B,0x3B,0x29,0x1F,0x18,0x12,0x04,
-  25, 0, 0xCA,0x03,0x12,0x1A,0x24,0x32,0x4B,0x3B,0x29,0x1F,0x18,0x12,0x04,0x03,0x12,0x1A,0x24,0x32,0x4B,0x3B,0x29,0x1F,0x18,0x12,0x04,
-  17, 0, 0xD0,0x99,0x06,0x08,0x20,0x29,0x04,0x01,0x00,0x08,0x01,0x00,0x06,0x01,0x00,0x00, 0x20,
-  5, 0, 0xD1,0x00,0x20,0x20,0x15,
-  5, 0, 0xE0, 0x00,0x00,0x00,0x00,
-  7, 0, 0xE1, 0x00,0x00,0x00,0x00,0x00,0x00,
-  2, 0, 0xE2, 0x00,
-  2, 0, 0x3A, 0x55,
-  5, 0, 0x2A, 0x00,0x00,0x01,0x3F,
-  5, 120, 0x2B,0x00,0x00,0x01,0xDF,
-  1, 120, 0x29,
-  0
-};
+    1, 120, 0x01,
+    1, 20, 0x11,
+    2, 2, 0xB0, 0x04,
+    16, 0, 0xB8, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    5, 0, 0xB9, 0x01, 0x00, 0xff, 0x18,
+    6, 2, 0xB3, 0x00, 0x00, 0x00, 0x00,
+    2, 0, 0xB4, 0x00,
+    9, 0, 0xC0, 0x03, 0xDF, 0x40, 0x10, 0x00, 0x01, 0x00, 0x55,
+    6, 0, 0xC1, 0x07, 0x27, 0x08, 0x08, 0x00,
+    5, 0, 0xC4, 0x57, 0x00, 0x05, 0x03,
+    2, 0, 0xC6, 0x04,
+    25, 0, 0xC8, 0x03, 0x12, 0x1A, 0x24, 0x32, 0x4B, 0x3B, 0x29, 0x1F, 0x18, 0x12, 0x04, 0x03, 0x12, 0x1A, 0x24, 0x32, 0x4B, 0x3B, 0x29, 0x1F, 0x18, 0x12, 0x04,
+    25, 0, 0xC9, 0x03, 0x12, 0x1A, 0x24, 0x32, 0x4B, 0x3B, 0x29, 0x1F, 0x18, 0x12, 0x04, 0x03, 0x12, 0x1A, 0x24, 0x32, 0x4B, 0x3B, 0x29, 0x1F, 0x18, 0x12, 0x04,
+    25, 0, 0xCA, 0x03, 0x12, 0x1A, 0x24, 0x32, 0x4B, 0x3B, 0x29, 0x1F, 0x18, 0x12, 0x04, 0x03, 0x12, 0x1A, 0x24, 0x32, 0x4B, 0x3B, 0x29, 0x1F, 0x18, 0x12, 0x04,
+    17, 0, 0xD0, 0x99, 0x06, 0x08, 0x20, 0x29, 0x04, 0x01, 0x00, 0x08, 0x01, 0x00, 0x06, 0x01, 0x00, 0x00, 0x20,
+    5, 0, 0xD1, 0x00, 0x20, 0x20, 0x15,
+    5, 0, 0xE0, 0x00, 0x00, 0x00, 0x00,
+    7, 0, 0xE1, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    2, 0, 0xE2, 0x00,
+    2, 0, 0x3A, 0x55,
+    5, 0, 0x2A, 0x00, 0x00, 0x01, 0x3F,
+    5, 120, 0x2B, 0x00, 0x00, 0x01, 0xDF,
+    1, 120, 0x29,
+    0};
 
 //--------------------------------------------------
 
-
 FLASHMEM ILI948x_t4_mm::ILI948x_t4_mm(int8_t dc, int8_t cs, int8_t rst)
-    : Teensy_Parallel_GFX(_TFTWIDTH, _TFTHEIGHT) {
-    _dc = dc;
-    _cs = cs;
-    _rst = rst;
-
-
-    // Note most of this could be at compile time...
-    _data_pins[0] = DISPLAY_D0;
-    _data_pins[1] = DISPLAY_D1;
-    _data_pins[2] = DISPLAY_D2;
-    _data_pins[3] = DISPLAY_D3;
-    _data_pins[4] = DISPLAY_D4;
-    _data_pins[5] = DISPLAY_D5;
-    _data_pins[6] = DISPLAY_D6;
-    _data_pins[7] = DISPLAY_D7;
-    _wr_pin = DISPLAY_WR;
-    _rd_pin = DISPLAY_RD;
+    : Teensy_Parallel_GFX(_TFTWIDTH, _TFTHEIGHT), _dc(dc), _cs(cs), _rst(rst),
+      _data_pins{DISPLAY_D0, DISPLAY_D1, DISPLAY_D2, DISPLAY_D3, DISPLAY_D4, DISPLAY_D5, DISPLAY_D6, DISPLAY_D7},
+      _wr_pin(DISPLAY_WR), _rd_pin(DISPLAY_RD) {
 }
 
 FLASHMEM void ILI948x_t4_mm::begin(uint8_t display_name, uint8_t buad_div) {
     // Serial.printf("Bus speed: %d Mhz \n", buad_div);
-    
+
     _display_name = display_name;
-    
+
     switch (buad_div) {
     case 2:
         _buad_div = 120;
@@ -362,10 +340,9 @@ FLASHMEM void ILI948x_t4_mm::invertDisplay(bool invert) {
     SglBeatWR_nPrm_8(invert ? ILI9488_INVON : ILI9488_INVOFF, 0, 0);
 }
 
-void ILI948x_t4_mm::setScroll(uint16_t offset)
-{
-//   SglBeatWR_nPrm_8(ILI9488_VSCRSADD, offset, 1); // Changed, offset is 
-    SglBeatWR_nPrm_16(ILI9488_VSCRSADD, &offset, 1);  // a pointer to a 16 bit value.
+void ILI948x_t4_mm::setScroll(uint16_t offset) {
+    //   SglBeatWR_nPrm_8(ILI9488_VSCRSADD, offset, 1); // Changed, offset is
+    SglBeatWR_nPrm_16(ILI9488_VSCRSADD, &offset, 1); // a pointer to a 16 bit value.
 }
 
 FLASHMEM void ILI948x_t4_mm::onCompleteCB(CBF callback) {
@@ -407,16 +384,21 @@ FASTRUN void ILI948x_t4_mm::displayInfo() {
     Serial.printf("Device Information: %06X\n", readCommandN(ILI9488_RDDID, 3));
     uint32_t device_status = readCommandN(ILI9488_RDDST, 4);
     Serial.printf("Device Status: %08X\n", device_status);
-    Serial.printf("\tOrder: %s\n", (device_status & (1 << 26))? "BGR" : "RGB");
+    Serial.printf("\tOrder: %s\n", (device_status & (1 << 26)) ? "BGR" : "RGB");
     Serial.print("\tinterface pixel format: ");
     switch ((device_status >> 20) & 0x7) {
-    case 0x5: Serial.println("16 bit"); break;
-    case 0x6: Serial.println("18 bit"); break;
-    case 0x7: Serial.println("24 bit"); break;
-    default: Serial.println("????");
-
+    case 0x5:
+        Serial.println("16 bit");
+        break;
+    case 0x6:
+        Serial.println("18 bit");
+        break;
+    case 0x7:
+        Serial.println("24 bit");
+        break;
+    default:
+        Serial.println("????");
     }
-
 
     CSHigh();
 }
@@ -456,9 +438,9 @@ FASTRUN void ILI948x_t4_mm::pushPixels16bitDMA(const uint16_t *pcolors, uint16_t
 // Private functions
 ///////////////////
 FLASHMEM void ILI948x_t4_mm::displayInit(uint8_t disp_name) {
-  const uint8_t *addr;
+    const uint8_t *addr;
 
-  switch (disp_name) {
+    switch (disp_name) {
     case 2: // ILI9481-1
     {
         addr = ILI9481_1_init_commands;
@@ -483,7 +465,7 @@ FLASHMEM void ILI948x_t4_mm::displayInit(uint8_t disp_name) {
     case 1: // ILI9486
     {
         addr = ILI9486_init_commands;
-        
+
         MADCTL[0] = MADCTL_MX | MADCTL_BGR;
         MADCTL[1] = MADCTL_MV | MADCTL_BGR;
         MADCTL[2] = MADCTL_MY | MADCTL_BGR;
@@ -504,37 +486,36 @@ FLASHMEM void ILI948x_t4_mm::displayInit(uint8_t disp_name) {
 
     case 0: // ILI9488
     default: {
-      addr = ILI9488_init_commands;
-      
-      MADCTL[0] = MADCTL_MX | MADCTL_BGR;
-      MADCTL[1] = MADCTL_MV | MADCTL_BGR,
-      MADCTL[2] = MADCTL_MY | MADCTL_BGR;
-      MADCTL[3] = MADCTL_MX | MADCTL_MY | MADCTL_MV | MADCTL_BGR;
-      MADCTL[4] = MADCTL_MY | MADCTL_MV | MADCTL_BGR;
-      Serial.println("ILI9488 Initialized");
+        addr = ILI9488_init_commands;
+
+        MADCTL[0] = MADCTL_MX | MADCTL_BGR;
+        MADCTL[1] = MADCTL_MV | MADCTL_BGR,
+        MADCTL[2] = MADCTL_MY | MADCTL_BGR;
+        MADCTL[3] = MADCTL_MX | MADCTL_MY | MADCTL_MV | MADCTL_BGR;
+        MADCTL[4] = MADCTL_MY | MADCTL_MV | MADCTL_BGR;
+        Serial.println("ILI9488 Initialized");
     } break;
-  }
-   
-  uint8_t cmd, commandVals[25];
-	while (1) {
-		uint8_t count = *addr++;
-    uint8_t ms = *addr++;
-		if (count-- == 0) break;
-    cmd =  *addr++;
-    uint8_t numArgs = 0;
-		while (count-- > 0) {
-      commandVals[numArgs] = *addr++;
-      numArgs += 1;
-		}
-    //Serial.printf("CNT: %d, MS: %d, CMD: 0x%x\n", i, ms, cmd);
-    //for(uint8_t j = 0; j < i; j++) {
-    //  Serial.printf(" 0x%x ", commandVals[j]);
-    //} Serial.println();
-    SglBeatWR_nPrm_8(cmd, commandVals , numArgs);
-    delay(ms);
+    }
 
-	}
-
+    uint8_t cmd, commandVals[25];
+    while (1) {
+        uint8_t count = *addr++;
+        uint8_t ms = *addr++;
+        if (count-- == 0)
+            break;
+        cmd = *addr++;
+        uint8_t numArgs = 0;
+        while (count-- > 0) {
+            commandVals[numArgs] = *addr++;
+            numArgs += 1;
+        }
+        // Serial.printf("CNT: %d, MS: %d, CMD: 0x%x\n", i, ms, cmd);
+        // for(uint8_t j = 0; j < i; j++) {
+        //   Serial.printf(" 0x%x ", commandVals[j]);
+        // } Serial.println();
+        SglBeatWR_nPrm_8(cmd, commandVals, numArgs);
+        delay(ms);
+    }
 }
 
 FASTRUN void ILI948x_t4_mm::CSLow() {
@@ -570,11 +551,77 @@ FASTRUN void ILI948x_t4_mm::gpioRead() {
     digitalWriteFast(_wr_pin, HIGH);
 }
 
+// If used this must be called before begin
+// Set the FlexIO pins.  The first version you can specify just the wr, and read and optionsl first Data.
+// it will use information in the Flexio library to fill in d1-d7
+FASTRUN bool ILI948x_t4_mm::setFlexIOPins(uint8_t write_pin, uint8_t rd_pin, uint8_t tft_d0) {
+    Serial.printf("ILI948x_t4_mm::setFlexIOPins(%u, %u, %u) %u %u %u\n", write_pin, rd_pin, tft_d0, _data_pins[0], _wr_pin, _rd_pin);
+    Serial.flush();
+    if (tft_d0 != 0xff) {
+#ifdef FLEX_IO_HAS_FULL_PIN_MAPPING
+        Serial.println("\td0 != 0xff\n");
+
+        uint8_t flexio_pin;
+        pFlex = FlexIOHandler::mapIOPinToFlexIOHandler(tft_d0, flexio_pin);
+        if ((pFlex == nullptr) || (flexio_pin == 0xff))
+            return false;
+
+        _data_pins[0] = tft_d0;
+
+        // lets dos some quick validation of the pins.
+        for (uint8_t i = 1; i < 8; i++) {
+            flexio_pin++; // lets look up the what pins come next.
+            _data_pins[i] = pFlex->mapFlexPinToIOPin(flexio_pin);
+            if (_data_pins[i] == 0xff) {
+                Serial.printf("Failed to find Teensy IO pin for Flexio pin %u\n", flexio_pin);
+                return false;
+            }
+        }
+#else
+        return false;
+#endif
+    }
+    // set the write and read pins and see if d0 is not 0xff set it and compute the others.
+    if (write_pin != 0xff)
+        _wr_pin = write_pin;
+    if (rd_pin != 0xff)
+        _rd_pin = rd_pin;
+
+    // Serial.printf("FlexIO pins: data: %u %u %u %u %u %u %u %u WR:%u RD:%u\n",
+    //               _data_pins[0], _data_pins[1], _data_pins[2], _data_pins[3], _data_pins[4], _data_pins[5], _data_pins[6], _data_pins[7],
+    //               _wr_pin, _rd_pin);
+    return true;
+}
+
+// Set the FlexIO pins.  Specify all of the pins for 8 bit mode. Must be called before begin
+FLASHMEM bool ILI948x_t4_mm::setFlexIOPins(uint8_t write_pin, uint8_t rd_pin, uint8_t d0, uint8_t d1, uint8_t d2, uint8_t d3,
+                                           uint8_t d4, uint8_t d5, uint8_t d6, uint8_t d7) {
+
+    _data_pins[0] = d0;
+    _data_pins[1] = d1;
+    _data_pins[2] = d2;
+    _data_pins[3] = d3;
+    _data_pins[4] = d4;
+    _data_pins[5] = d5;
+    _data_pins[6] = d6;
+    _data_pins[7] = d7;
+    _wr_pin = write_pin;
+    _rd_pin = rd_pin;
+
+    Serial.printf("FlexIO pins: data: %u %u %u %u %u %u %u %u WR:%u RD:%u\n",
+                  _data_pins[0], _data_pins[1], _data_pins[2], _data_pins[3], _data_pins[4], _data_pins[5], _data_pins[6], _data_pins[7],
+                  _wr_pin, _rd_pin);
+    // Note this does not verify the pins are valid.
+    return true;
+}
+
 FASTRUN void ILI948x_t4_mm::FlexIO_Init() {
     /* Get a FlexIO channel */
     // lets assume D0 is the valid one...
+    Serial.printf("FlexIO_Init: D0:%u WR:%u RD:%u\n", _data_pins[0], _wr_pin, _rd_pin);
+    Serial.flush();
     pFlex = FlexIOHandler::mapIOPinToFlexIOHandler(_data_pins[0], _flexio_D0);
-    //pFlex = FlexIOHandler::flexIOHandler_list[1]; // use FlexIO2
+    // pFlex = FlexIOHandler::flexIOHandler_list[1]; // use FlexIO2
     /* Pointer to the port structure in the FlexIO channel */
     p = &pFlex->port();
     /* Pointer to the hardware structure in the FlexIO channel */
@@ -582,28 +629,28 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Init() {
 
     // lets dos some quick validation of the pins.
     for (uint8_t i = 1; i < 8; i++) {
-      uint8_t flexio_pin = pFlex->mapIOPinToFlexPin(_data_pins[i]);
-      if (flexio_pin != (_flexio_D0 + i)) {
-        Serial.printf("ILI948x_t4_mm::FlexIO_Ini - Flex IO Data pins pin issue D0(%u), D%u(%u)\n", _flexio_D0, i, flexio_pin);
-      }
+        uint8_t flexio_pin = pFlex->mapIOPinToFlexPin(_data_pins[i]);
+        if (flexio_pin != (_flexio_D0 + i)) {
+            Serial.printf("ILI948x_t4_mm::FlexIO_Ini - Flex IO Data pins pin issue D0(%u), D%u(%u)\n", _flexio_D0, i, flexio_pin);
+        }
     }
-    
+
     _flexio_WR = pFlex->mapIOPinToFlexPin(_wr_pin);
     _flexio_RD = pFlex->mapIOPinToFlexPin(_rd_pin);
 
-    if ((_flexio_WR == 0xff) ||  (_flexio_RD == 0xff)) {
-      Serial.printf("ILI948x_t4_mm::FlexIO_Ini - RD/WR pin issue: WR:%u(%u) RD:%u(%u)\n", _wr_pin, _flexio_WR, _rd_pin, _flexio_RD);
+    if ((_flexio_WR == 0xff) || (_flexio_RD == 0xff)) {
+        Serial.printf("ILI948x_t4_mm::FlexIO_Ini - RD/WR pin issue: WR:%u(%u) RD:%u(%u)\n", _wr_pin, _flexio_WR, _rd_pin, _flexio_RD);
     }
 
-
+    Serial.printf("FlexIO pin mappings: D0(%u)=%u  WR(%u)=%u RD(%u)=%u\n)", _data_pins[0], _flexio_D0, _wr_pin, _flexio_WR, _rd_pin, _flexio_RD);
     /* Basic pin setup */
     pinMode(_wr_pin, OUTPUT); // FlexIO2:0 WR
     pinMode(_rd_pin, OUTPUT); // FlexIO2:1 RD
 
     for (uint8_t pin_index = 0; pin_index < 8; pin_index++) {
-      pinMode(_data_pins[pin_index], OUTPUT);
-      *(portControlRegister(_data_pins[pin_index])) = 0xFF;
-      pFlex->setIOPinToFlexMode(_data_pins[pin_index]);
+        pinMode(_data_pins[pin_index], OUTPUT);
+        *(portControlRegister(_data_pins[pin_index])) = 0xFF;
+        pFlex->setIOPinToFlexMode(_data_pins[pin_index]);
     }
 
     digitalWriteFast(_wr_pin, HIGH);
@@ -640,17 +687,17 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat_Read() {
         | FLEXIO_SHIFTCFG_PWIDTH(7); /* Bus width */
 
     p->SHIFTCTL[3] =
-        FLEXIO_SHIFTCTL_TIMSEL(0)           /* Shifter's assigned timer index */
-        | FLEXIO_SHIFTCTL_TIMPOL * (1)      /* Shift on posedge of shift clock */
-        | FLEXIO_SHIFTCTL_PINCFG(0)         /* Shifter's pin configured as input */
+        FLEXIO_SHIFTCTL_TIMSEL(0)                    /* Shifter's assigned timer index */
+        | FLEXIO_SHIFTCTL_TIMPOL * (1)               /* Shift on posedge of shift clock */
+        | FLEXIO_SHIFTCTL_PINCFG(0)                  /* Shifter's pin configured as input */
         | FLEXIO_SHIFTCTL_PINSEL(_flexio_D0) /*D0 */ /* Shifter's pin start index */
-        | FLEXIO_SHIFTCTL_PINPOL * (0)      /* Shifter's pin active high */
-        | FLEXIO_SHIFTCTL_SMOD(1);          /* Shifter mode as recieve */
+        | FLEXIO_SHIFTCTL_PINPOL * (0)               /* Shifter's pin active high */
+        | FLEXIO_SHIFTCTL_SMOD(1);                   /* Shifter mode as recieve */
 
     /* Configure the timer for shift clock */
     p->TIMCMP[0] =
-        (((1 * 2) - 1) << 8) /* TIMCMP[15:8] = number of beats x 2 – 1 */
-        | (((ILI9488_CLOCK_READ ) / 2) - 1);  /* TIMCMP[7:0] = baud rate divider / 2 – 1 ::: 30 = 8Mhz with current controller speed */
+        (((1 * 2) - 1) << 8)                /* TIMCMP[15:8] = number of beats x 2 – 1 */
+        | (((ILI9488_CLOCK_READ) / 2) - 1); /* TIMCMP[7:0] = baud rate divider / 2 – 1 ::: 30 = 8Mhz with current controller speed */
 
     p->TIMCFG[0] =
         FLEXIO_TIMCFG_TIMOUT(0)       /* Timer output logic one when enabled and not affected by reset */
@@ -748,9 +795,9 @@ FASTRUN uint32_t ILI948x_t4_mm::readCommandN(uint8_t const cmd, uint8_t count_by
     dummy = p->SHIFTBUFBYS[3];
 
     while (count_bytes--) {
-      while (0 == (p->SHIFTSTAT & (1 << 3))) {
-      }
-      data = (data << 8) | (p->SHIFTBUFBYS[3] & 0xff);
+        while (0 == (p->SHIFTSTAT & (1 << 3))) {
+        }
+        data = (data << 8) | (p->SHIFTBUFBYS[3] & 0xff);
     }
     // Serial.printf("Dummy 0x%x, data 0x%x\n", dummy, data);
 
@@ -774,17 +821,17 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat() {
         | FLEXIO_SHIFTCFG_PWIDTH(7); /* Bus width */
 
     p->SHIFTCTL[0] =
-        FLEXIO_SHIFTCTL_TIMSEL(0)      /* Shifter's assigned timer index */
-        | FLEXIO_SHIFTCTL_TIMPOL * (0) /* Shift on posedge of shift clock */
-        | FLEXIO_SHIFTCTL_PINCFG(3)    /* Shifter's pin configured as output */
-        | FLEXIO_SHIFTCTL_PINSEL(_flexio_D0)    /* Shifter's pin start index */
-        | FLEXIO_SHIFTCTL_PINPOL * (0) /* Shifter's pin active high */
-        | FLEXIO_SHIFTCTL_SMOD(2);     /* Shifter mode as transmit */
+        FLEXIO_SHIFTCTL_TIMSEL(0)            /* Shifter's assigned timer index */
+        | FLEXIO_SHIFTCTL_TIMPOL * (0)       /* Shift on posedge of shift clock */
+        | FLEXIO_SHIFTCTL_PINCFG(3)          /* Shifter's pin configured as output */
+        | FLEXIO_SHIFTCTL_PINSEL(_flexio_D0) /* Shifter's pin start index */
+        | FLEXIO_SHIFTCTL_PINPOL * (0)       /* Shifter's pin active high */
+        | FLEXIO_SHIFTCTL_SMOD(2);           /* Shifter mode as transmit */
 
     /* Configure the timer for shift clock */
     p->TIMCMP[0] =
         (((1 * 2) - 1) << 8)     /* TIMCMP[15:8] = number of beats x 2 – 1 */
-        | ((_buad_div  / 2) - 1); /* TIMCMP[7:0] = baud rate divider / 2 – 1 */
+        | ((_buad_div / 2) - 1); /* TIMCMP[7:0] = baud rate divider / 2 – 1 */
 
     p->TIMCFG[0] =
         FLEXIO_TIMCFG_TIMOUT(0)       /* Timer output logic one when enabled and not affected by reset */
@@ -844,21 +891,21 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_MultiBeat() {
     }
 
     p->SHIFTCTL[0] =
-        FLEXIO_SHIFTCTL_TIMSEL(0)       /* Shifter's assigned timer index */
-        | FLEXIO_SHIFTCTL_TIMPOL * (0U) /* Shift on posedge of shift clock */
-        | FLEXIO_SHIFTCTL_PINCFG(3U)    /* Shifter's pin configured as output */
-        | FLEXIO_SHIFTCTL_PINSEL(_flexio_D0)     /* Shifter's pin start index */
-        | FLEXIO_SHIFTCTL_PINPOL * (0U) /* Shifter's pin active high */
-        | FLEXIO_SHIFTCTL_SMOD(2U);     /* shifter mode transmit */
+        FLEXIO_SHIFTCTL_TIMSEL(0)            /* Shifter's assigned timer index */
+        | FLEXIO_SHIFTCTL_TIMPOL * (0U)      /* Shift on posedge of shift clock */
+        | FLEXIO_SHIFTCTL_PINCFG(3U)         /* Shifter's pin configured as output */
+        | FLEXIO_SHIFTCTL_PINSEL(_flexio_D0) /* Shifter's pin start index */
+        | FLEXIO_SHIFTCTL_PINPOL * (0U)      /* Shifter's pin active high */
+        | FLEXIO_SHIFTCTL_SMOD(2U);          /* shifter mode transmit */
 
     for (i = 1; i <= SHIFTNUM - 1; i++) {
         p->SHIFTCTL[i] =
-            FLEXIO_SHIFTCTL_TIMSEL(0)       /* Shifter's assigned timer index */
-            | FLEXIO_SHIFTCTL_TIMPOL * (0U) /* Shift on posedge of shift clock */
-            | FLEXIO_SHIFTCTL_PINCFG(0U)    /* Shifter's pin configured as output disabled */
-            | FLEXIO_SHIFTCTL_PINSEL(_flexio_D0)     /* Shifter's pin start index */
-            | FLEXIO_SHIFTCTL_PINPOL * (0U) /* Shifter's pin active high */
-            | FLEXIO_SHIFTCTL_SMOD(2U);     /* shifter mode transmit */
+            FLEXIO_SHIFTCTL_TIMSEL(0)            /* Shifter's assigned timer index */
+            | FLEXIO_SHIFTCTL_TIMPOL * (0U)      /* Shift on posedge of shift clock */
+            | FLEXIO_SHIFTCTL_PINCFG(0U)         /* Shifter's pin configured as output disabled */
+            | FLEXIO_SHIFTCTL_PINSEL(_flexio_D0) /* Shifter's pin start index */
+            | FLEXIO_SHIFTCTL_PINPOL * (0U)      /* Shifter's pin active high */
+            | FLEXIO_SHIFTCTL_SMOD(2U);          /* shifter mode transmit */
     }
 
     /* Configure the timer for shift clock */
@@ -1276,8 +1323,8 @@ uint16_t ILI948x_t4_mm::readPixel(int16_t x, int16_t y) {
 }
 
 void ILI948x_t4_mm::readRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *pcolors) {
-    //Serial.printf("readRect(%d, %d, %d, %d, %p)\n", x, y, w, h, pcolors);
-    // first do any clipping.
+    // Serial.printf("readRect(%d, %d, %d, %d, %p)\n", x, y, w, h, pcolors);
+    //  first do any clipping.
     if ((x >= _displayclipx2) || (y >= _displayclipy2))
         return;
     if (((x + w) <= _displayclipx1) || ((y + h) <= _displayclipy1))
@@ -1315,61 +1362,53 @@ void ILI948x_t4_mm::readRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_
     /* De-assert RS pin */
     DCHigh();
     microSecondDelay();
-    //delayMicroseconds(50);
+    // delayMicroseconds(50);
 
     FlexIO_Clear_Config_SnglBeat();
     FlexIO_Config_SnglBeat_Read();
 
     uint8_t dummy = 0;
-    #define DUMMY_COUNT 1
+#define DUMMY_COUNT 1
     for (uint8_t i = 0; i < DUMMY_COUNT; i++) {
         // read in dummy bytes
         while (0 == (p->SHIFTSTAT & (1 << 3))) {
         }
-        digitalToggleFast(0);
         dummy = p->SHIFTBUFBYS[3];
-        //Serial.printf("\tD%u=%x\n", i, dummy);
-
+        // Serial.printf("\tD%u=%x\n", i, dummy);
     }
     /*Wait for transfer to be completed */
-    if(_display_name != ILI9488) {
-      // 16 bit mode
-      int count_pixels = w * h;
-      uint8_t *pc = (uint8_t*)pcolors;
-      delayMicroseconds(50);
-      while (count_pixels--) {
-          while (0 == (p->SHIFTSTAT & (1U << 3))) {
-          }
-          digitalToggleFast(0);
-          uint8_t b1 = (p->SHIFTBUFBYS[3] & 0xff);
+    if (_display_name != ILI9488) {
+        // 16 bit mode
+        int count_pixels = w * h;
+        uint8_t *pc = (uint8_t *)pcolors;
+        while (count_pixels--) {
+            while (0 == (p->SHIFTSTAT & (1U << 3))) {
+            }
+            uint8_t b1 = (p->SHIFTBUFBYS[3] & 0xff);
 
-          while (0 == (p->SHIFTSTAT & (1U << 3))) {
-          }
-          digitalToggleFast(0);
-          *pc++ = (p->SHIFTBUFBYS[3] & 0xff);
-          *pc++ = b1;
-      }
+            while (0 == (p->SHIFTSTAT & (1U << 3))) {
+            }
+            *pc++ = (p->SHIFTBUFBYS[3] & 0xff);
+            *pc++ = b1;
+        }
     } else {
-    int count_pixels = w * h;
-      while (count_pixels--) {
-          uint8_t r, g, b;
-          while (0 == (p->SHIFTSTAT & (1U << 3))) {
-          }
-          digitalToggleFast(0);
-          r = (p->SHIFTBUFBYS[3] & 0xff);
+        int count_pixels = w * h;
+        while (count_pixels--) {
+            uint8_t r, g, b;
+            while (0 == (p->SHIFTSTAT & (1U << 3))) {
+            }
+            r = (p->SHIFTBUFBYS[3] & 0xff);
 
-          while (0 == (p->SHIFTSTAT & (1U << 3))) {
-          }
-          digitalToggleFast(0);
-          g = (p->SHIFTBUFBYS[3] & 0xff);
+            while (0 == (p->SHIFTSTAT & (1U << 3))) {
+            }
+            g = (p->SHIFTBUFBYS[3] & 0xff);
 
-          while (0 == (p->SHIFTSTAT & (1U << 3))) {
-          }
-          digitalToggleFast(0);
-          b = (p->SHIFTBUFBYS[3] & 0xff);
+            while (0 == (p->SHIFTSTAT & (1U << 3))) {
+            }
+            b = (p->SHIFTBUFBYS[3] & 0xff);
 
-          *pcolors++ = color565(r, g, b);
-      }
+            *pcolors++ = color565(r, g, b);
+        }
     }
 
     // Set FlexIO back to Write mode
