@@ -968,7 +968,7 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_MultiBeat() {
     gpioWrite();
 
     for (i = 0; i <= SHIFTNUM - 1; i++) {
-        p->SHIFTCFG[i] =
+        p->SHIFTCFG[_write_shifter + i] =
             FLEXIO_SHIFTCFG_INSRC * (1U)       /* Shifter input from next shifter's output */
             | FLEXIO_SHIFTCFG_SSTOP(0U)        /* Shifter stop bit disabled */
             | FLEXIO_SHIFTCFG_SSTART(0U)       /* Shifter start bit disabled and loading data on enabled */
@@ -984,7 +984,7 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_MultiBeat() {
         | FLEXIO_SHIFTCTL_SMOD(2U);          /* shifter mode transmit */
 
     for (i = 1; i <= SHIFTNUM - 1; i++) {
-        p->SHIFTCTL[i] =
+        p->SHIFTCTL[_write_shifter + i] =
             FLEXIO_SHIFTCTL_TIMSEL(_flexio_timer)            /* Shifter's assigned timer index */
             | FLEXIO_SHIFTCTL_TIMPOL * (0U)      /* Shift on posedge of shift clock */
             | FLEXIO_SHIFTCTL_PINCFG(0U)         /* Shifter's pin configured as output disabled */

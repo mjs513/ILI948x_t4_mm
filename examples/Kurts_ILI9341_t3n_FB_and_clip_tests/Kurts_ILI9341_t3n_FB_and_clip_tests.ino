@@ -1,3 +1,17 @@
+//-------------------------------------------------------------------
+// Kurt's Frame buffer and clip tests
+//
+// This test program is a set of random tests that have been done
+// over time to test out the different functions to make sure they
+// are working with the clipping functions as well as the frame
+// buffer.  So you can for example test to see if you get the
+// same results with the frame buffer turned on or off
+//
+// this sketch is in the public domain.
+//
+// This sketch depends on the fonts that are contained in the library
+//     https://github.com/mjs513/ILI9341_fonts
+//-------------------------------------------------------------------
 #include <MemoryHexDump.h>
 
 #include <Teensy_Parallel_GFX.h>
@@ -42,7 +56,7 @@ void setup() {
         Serial.print(CrashReport);
         WaitForUserInput();
     }
-//Serial.printf("Begin: CS:%d, DC:%d, MOSI:%d, MISO: %d, SCK: %d, RST: %d\n", TFT_CS, TFT_DC, TFT_MOSI, TFT_MISO, TFT_SCK, TFT_RST);
+    //Serial.printf("Begin: CS:%d, DC:%d, MOSI:%d, MISO: %d, SCK: %d, RST: %d\n", TFT_CS, TFT_DC, TFT_MOSI, TFT_MISO, TFT_SCK, TFT_RST);
     Serial.println("\n*** Sketch Startup ***");
 #ifdef TFT_TOUCH_CS
     pinMode(TFT_TOUCH_CS, OUTPUT);
@@ -63,13 +77,14 @@ void setup() {
 //    tft.setFlexIOPins(7, 8, 40);
 //    tft.setFlexIOPins(7, 8, 40, 41, 42, 43, 44, 45, 6, 9);
 #elif defined(ARDUINO_TEENSY41)
-    tft.setFlexIOPins(36, 37, 19);  // Teensy 4.1 pin
-#endif    
-    Serial.println("After setflexio pins"); Serial.flush();
+    tft.setFlexIOPins(36, 37, 19);             // Teensy 4.1 pin
+#endif
+    Serial.println("After setflexio pins");
+    Serial.flush();
     tft.begin(ILI9486, 12);
     tft.setBitDepth(16);
     tft.displayInfo();
-    
+
     //  tft.setFrameBuffer(tft_frame_buffer);
 
     tft.setRotation(ROTATION);
@@ -415,24 +430,27 @@ void drawTestScreen() {
 // Try a read rect and write rect
 #define BAND_WIDTH 8
 #define BAND_HEIGHT 20
-    tft.fillRect(50 + BAND_WIDTH * 0, 250, BAND_WIDTH, BAND_HEIGHT, ILI9488_RED);
-    tft.fillRect(50 + BAND_WIDTH * 1, 250, BAND_WIDTH, BAND_HEIGHT, ILI9488_GREEN);
-    tft.fillRect(50 + BAND_WIDTH * 2, 250, BAND_WIDTH, BAND_HEIGHT, ILI9488_BLUE);
-    tft.fillRect(50 + BAND_WIDTH * 3, 250, BAND_WIDTH, BAND_HEIGHT, ILI9488_BLACK);
-    tft.fillRect(50 + BAND_WIDTH * 4, 250, BAND_WIDTH, BAND_HEIGHT, ILI9488_WHITE);
-    tft.fillRect(50 + BAND_WIDTH * 5, 250, BAND_WIDTH, BAND_HEIGHT, ILI9488_YELLOW);
-    tft.fillRect(50 + BAND_WIDTH * 6, 250, BAND_WIDTH, BAND_HEIGHT, ILI9488_CYAN);
-    tft.fillRect(50 + BAND_WIDTH * 7, 250, BAND_WIDTH, BAND_HEIGHT, ILI9488_PINK);
+#define BAND_START_X 200
+#define BAND_START_Y 259
+
+    tft.fillRect(BAND_START_X + BAND_WIDTH * 0, BAND_START_Y, BAND_WIDTH, BAND_HEIGHT, ILI9488_RED);
+    tft.fillRect(BAND_START_X + BAND_WIDTH * 1, BAND_START_Y, BAND_WIDTH, BAND_HEIGHT, ILI9488_GREEN);
+    tft.fillRect(BAND_START_X + BAND_WIDTH * 2, BAND_START_Y, BAND_WIDTH, BAND_HEIGHT, ILI9488_BLUE);
+    tft.fillRect(BAND_START_X + BAND_WIDTH * 3, BAND_START_Y, BAND_WIDTH, BAND_HEIGHT, ILI9488_BLACK);
+    tft.fillRect(BAND_START_X + BAND_WIDTH * 4, BAND_START_Y, BAND_WIDTH, BAND_HEIGHT, ILI9488_WHITE);
+    tft.fillRect(BAND_START_X + BAND_WIDTH * 5, BAND_START_Y, BAND_WIDTH, BAND_HEIGHT, ILI9488_YELLOW);
+    tft.fillRect(BAND_START_X + BAND_WIDTH * 6, BAND_START_Y, BAND_WIDTH, BAND_HEIGHT, ILI9488_CYAN);
+    tft.fillRect(BAND_START_X + BAND_WIDTH * 7, BAND_START_Y, BAND_WIDTH, BAND_HEIGHT, ILI9488_PINK);
     //WaitForUserInput();
     memset(pixel_data, 0, sizeof(pixel_data));
-    tft.readRect(50, 250, BAND_WIDTH*8, BAND_HEIGHT, pixel_data);
+    tft.readRect(BAND_START_X, BAND_START_Y, BAND_WIDTH * 8, BAND_HEIGHT, pixel_data);
     MemoryHexDump(Serial, pixel_data, BAND_WIDTH * 8 * 2, true, "\nColor bars:\n");
-    
-    tft.writeRect(50, 250 + BAND_HEIGHT, BAND_WIDTH * 8, BAND_HEIGHT, pixel_data);
+
+    tft.writeRect(BAND_START_X, BAND_START_Y + BAND_HEIGHT, BAND_WIDTH * 8, BAND_HEIGHT, pixel_data);
     //WaitForUserInput();
-    
+
     tft.readRect(0, 0, 50, 50, pixel_data);
-//    MemoryHexDump(Serial, pixel_data, 1024, true);
+    //    MemoryHexDump(Serial, pixel_data, 1024, true);
     // For heck of it lets make sure readPixel and ReadRect
     // give us same data, maybe check along diagnal?
     for (uint i = 0; i < 50; i++) {
@@ -481,6 +499,32 @@ void drawTestScreen() {
     // Try drawing button
     tft.setFontAdafruit();
     //button.drawButton();
+    // Lets fill up some more of the larger screen.
+
+    tft.fillCircle(380, 220, 80, ILI9488_GREEN);
+    tft.fillCircle(380, 220, 60, ILI9488_BLUE);
+    tft.drawCircle(380, 220, 40, ILI9488_RED);
+    tft.drawCircle(380, 220, 20, ILI9488_YELLOW);
+
+    tft.fillTriangle(20, 300, 170, 300, 95, 240, ILI9488_GREEN);
+    tft.fillTriangle(40, 280, 150, 280, 95, 220, ILI9488_RED);
+    tft.drawTriangle(60, 260, 130, 260, 95, 200, ILI9488_YELLOW);
+    tft.drawTriangle(80, 240, 110, 240, 95, 180, ILI9488_BLUE);
+
+    tft.setFont(&FreeMonoBoldOblique12pt7b);
+    tft.setCursor(250, 50);
+    tft.setTextColor(ILI9488_WHITE);
+    tft.println("Adafruit");
+    tft.setCursor(250, tft.getCursorY());
+    tft.setTextColor(ILI9488_WHITE, ILI9488_GREEN);
+    tft.println("MonoBold");
+
+
+    //if (use_dma) {
+    //    tft.updateScreenAsync();
+    //} else {
+    tft.updateScreen();
+    //}
 
     Serial.println(millis() - start_time, DEC);
 
