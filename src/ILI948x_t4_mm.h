@@ -242,6 +242,12 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX {
     uint8_t _data_pins[8], _wr_pin, _rd_pin;
 
     uint8_t _flexio_D0, _flexio_WR, _flexio_RD; // which flexio pins do they map to
+    uint8_t _write_shifter = 0;
+    uint8_t _write_shifter_mask = (1 << 0);
+    uint8_t _read_shifter = 3;
+    uint8_t _read_shifter_mask = (1 << 3);
+    uint8_t _flexio_timer = 0;
+    uint8_t _flexio_timer_mask = 1 << 0;
 
     uint8_t _dummy;
     uint8_t _curMADCTL;
@@ -262,6 +268,8 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX {
     void gpioRead();
 
     void FlexIO_Init();
+    typedef enum {CONFIG_CLEAR=0, CONFIG_SNGLBEAT, CONFIG_MULTIBEAT, CONFIG_SNGLREAD} Flexio_config_state_t;
+    Flexio_config_state_t flex_config = CONFIG_CLEAR;
     void FlexIO_Config_SnglBeat();
     void FlexIO_Clear_Config_SnglBeat();
     void FlexIO_Config_MultiBeat();

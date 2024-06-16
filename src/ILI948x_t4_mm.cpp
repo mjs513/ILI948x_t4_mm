@@ -4,7 +4,7 @@
 // DMAMEM uint32_t framebuff[DATABUFBYTES];
 
 #if !defined(ARDUINO_TEENSY_MICROMOD)
-#error This library only supports the Teensy Micromod!
+#warning This library only supports the Teensy Micromod!
 #endif
 
 //--------------------------------------------------
@@ -439,7 +439,7 @@ FASTRUN void ILI948x_t4_mm::pushPixels16bitDMA(const uint16_t *pcolors, uint16_t
 ///////////////////
 FLASHMEM void ILI948x_t4_mm::displayInit(uint8_t disp_name) {
     const uint8_t *addr;
-
+    Serial.println("displayInit called");
     switch (disp_name) {
     case 2: // ILI9481-1
     {
@@ -587,9 +587,9 @@ FASTRUN bool ILI948x_t4_mm::setFlexIOPins(uint8_t write_pin, uint8_t rd_pin, uin
     if (rd_pin != 0xff)
         _rd_pin = rd_pin;
 
-    // Serial.printf("FlexIO pins: data: %u %u %u %u %u %u %u %u WR:%u RD:%u\n",
-    //               _data_pins[0], _data_pins[1], _data_pins[2], _data_pins[3], _data_pins[4], _data_pins[5], _data_pins[6], _data_pins[7],
-    //               _wr_pin, _rd_pin);
+     Serial.printf("FlexIO pins: data: %u %u %u %u %u %u %u %u WR:%u RD:%u\n",
+                   _data_pins[0], _data_pins[1], _data_pins[2], _data_pins[3], _data_pins[4], _data_pins[5], _data_pins[6], _data_pins[7],
+                   _wr_pin, _rd_pin);
     return true;
 }
 
@@ -635,6 +635,31 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Init() {
         }
     }
 
+    // Lets reserve the timer and shifters.
+    _flexio_timer = pFlex->requestTimers();
+    _flexio_timer_mask = 1 << _flexio_timer;
+
+    if (pFlex->claimShifter(0)) {
+        _write_shifter = 0;
+    } else if (pFlex->claimShifter(4)) {
+        _write_shifter = 4;
+    } else {
+        Serial.println("ILI948x_t4_mm::FlexIO_Init could not claim write Timer(0 or 4");
+    }
+
+    // Maybe this is optional
+    if (pFlex->claimShifter(3)) {
+        _read_shifter = 3;
+    } else if (pFlex->claimShifter(7)) {
+        _read_shifter = 7;
+    } else {
+        Serial.println("ILI948x_t4_mm::FlexIO_Init could not claim Read Timer(3 or 7");
+    }
+    _write_shifter_mask = 1 << _write_shifter;
+    _read_shifter_mask = 1 << _read_shifter;
+
+    Serial.printf("FlexIO Timer:%u Shifter Write:%u Read:%u\n", _flexio_timer, _write_shifter, _read_shifter);
+
     _flexio_WR = pFlex->mapIOPinToFlexPin(_wr_pin);
     _flexio_RD = pFlex->mapIOPinToFlexPin(_rd_pin);
 
@@ -643,6 +668,9 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Init() {
     }
 
     Serial.printf("FlexIO pin mappings: D0(%u)=%u  WR(%u)=%u RD(%u)=%u\n)", _data_pins[0], _flexio_D0, _wr_pin, _flexio_WR, _rd_pin, _flexio_RD);
+
+    // Now l
+
     /* Basic pin setup */
     pinMode(_wr_pin, OUTPUT); // FlexIO2:0 WR
     pinMode(_rd_pin, OUTPUT); // FlexIO2:1 RD
@@ -669,25 +697,30 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Init() {
     hw->clock_gate_register |= hw->clock_gate_mask;
     /* Enable the FlexIO with fast access */
     p->CTRL = FLEXIO_CTRL_FLEXEN | FLEXIO_CTRL_FASTACC;
+
+    Serial.println("*** flexio_init completed ***");
 }
 
 FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat_Read() {
 
+    if (flex_config == CONFIG_SNGLREAD) return;
+    flex_config = CONFIG_SNGLREAD;
+
     p->CTRL &= ~FLEXIO_CTRL_FLEXEN;
-    p->CTRL |= FLEXIO_CTRL_SWRST;
-    p->CTRL &= ~FLEXIO_CTRL_SWRST;
+    //p->CTRL |= FLEXIO_CTRL_SWRST;
+    //p->CTRL &= ~FLEXIO_CTRL_SWRST;
 
     gpioRead(); // write line high, pin 12(rst) as output
 
     /* Configure the shifters */
-    p->SHIFTCFG[3] =
+    p->SHIFTCFG[_read_shifter] =
         // FLEXIO_SHIFTCFG_INSRC                                                  /* Shifter input */
         FLEXIO_SHIFTCFG_SSTOP(0)     /* Shifter stop bit disabled */
         | FLEXIO_SHIFTCFG_SSTART(0)  /* Shifter start bit disabled and loading data on enabled */
         | FLEXIO_SHIFTCFG_PWIDTH(7); /* Bus width */
 
-    p->SHIFTCTL[3] =
-        FLEXIO_SHIFTCTL_TIMSEL(0)                    /* Shifter's assigned timer index */
+    p->SHIFTCTL[_read_shifter] =
+        FLEXIO_SHIFTCTL_TIMSEL(_flexio_timer)                    /* Shifter's assigned timer index */
         | FLEXIO_SHIFTCTL_TIMPOL * (1)               /* Shift on posedge of shift clock */
         | FLEXIO_SHIFTCTL_PINCFG(0)                  /* Shifter's pin configured as input */
         | FLEXIO_SHIFTCTL_PINSEL(_flexio_D0) /*D0 */ /* Shifter's pin start index */
@@ -695,11 +728,11 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat_Read() {
         | FLEXIO_SHIFTCTL_SMOD(1);                   /* Shifter mode as recieve */
 
     /* Configure the timer for shift clock */
-    p->TIMCMP[0] =
+    p->TIMCMP[_flexio_timer] =
         (((1 * 2) - 1) << 8)                /* TIMCMP[15:8] = number of beats x 2 – 1 */
         | (((ILI9488_CLOCK_READ) / 2) - 1); /* TIMCMP[7:0] = baud rate divider / 2 – 1 ::: 30 = 8Mhz with current controller speed */
 
-    p->TIMCFG[0] =
+    p->TIMCFG[_flexio_timer] =
         FLEXIO_TIMCFG_TIMOUT(0)       /* Timer output logic one when enabled and not affected by reset */
         | FLEXIO_TIMCFG_TIMDEC(0)     /* Timer decrement on FlexIO clock, shift clock equals timer output */
         | FLEXIO_TIMCFG_TIMRST(0)     /* Timer never reset */
@@ -708,8 +741,8 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat_Read() {
         | FLEXIO_TIMCFG_TSTOP(1)      /* Timer stop bit disabled */
         | FLEXIO_TIMCFG_TSTART * (0); /* Timer start bit disabled */
 
-    p->TIMCTL[0] =
-        FLEXIO_TIMCTL_TRGSEL((((3) << 2) | 1)) /* Timer trigger selected as shifter's status flag */
+    p->TIMCTL[_flexio_timer] =
+        FLEXIO_TIMCTL_TRGSEL((((_read_shifter) << 2) | 1)) /* Timer trigger selected as shifter's status flag */
         | FLEXIO_TIMCTL_TRGPOL * (1)           /* Timer trigger polarity as active low */
         | FLEXIO_TIMCTL_TRGSRC * (1)           /* Timer trigger source as internal */
         | FLEXIO_TIMCTL_PINCFG(3)              /* Timer' pin configured as output */
@@ -730,12 +763,12 @@ FASTRUN uint8_t ILI948x_t4_mm::readCommand(uint8_t const cmd) {
     DCLow();
 
     /* Write command index */
-    p->SHIFTBUF[0] = cmd;
+    p->SHIFTBUF[_write_shifter] = cmd;
 
     /*Wait for transfer to be completed */
-    while (0 == (p->SHIFTSTAT & (1 << 0))) {
+    while (0 == (p->SHIFTSTAT & _write_shifter_mask)) {
     }
-    while (0 == (p->TIMSTAT & (1 << 0))) {
+    while (0 == (p->TIMSTAT & _flexio_timer_mask)) {
     }
 
     /* De-assert RS pin */
@@ -748,13 +781,13 @@ FASTRUN uint8_t ILI948x_t4_mm::readCommand(uint8_t const cmd) {
     uint8_t dummy = 0;
     uint8_t data = 0;
 
-    while (0 == (p->SHIFTSTAT & (1 << 3))) {
+    while (0 == (p->SHIFTSTAT & _read_shifter_mask)) {
     }
-    dummy = p->SHIFTBUFBYS[3];
+    dummy = p->SHIFTBUFBYS[_read_shifter];
 
-    while (0 == (p->SHIFTSTAT & (1 << 3))) {
+    while (0 == (p->SHIFTSTAT & _read_shifter_mask)) {
     }
-    data = p->SHIFTBUFBYS[3];
+    data = p->SHIFTBUFBYS[_read_shifter];
     // Serial.printf("Dummy 0x%x, data 0x%x\n", dummy, data);
 
     // Set FlexIO back to Write mode
@@ -772,12 +805,12 @@ FASTRUN uint32_t ILI948x_t4_mm::readCommandN(uint8_t const cmd, uint8_t count_by
     DCLow();
 
     /* Write command index */
-    p->SHIFTBUF[0] = cmd;
+    p->SHIFTBUF[_write_shifter] = cmd;
 
     /*Wait for transfer to be completed */
-    while (0 == (p->SHIFTSTAT & (1 << 0))) {
+    while (0 == (p->SHIFTSTAT & _write_shifter_mask)) {
     }
-    while (0 == (p->TIMSTAT & (1 << 0))) {
+    while (0 == (p->TIMSTAT & _flexio_timer_mask)) {
     }
 
     /* De-assert RS pin */
@@ -790,14 +823,14 @@ FASTRUN uint32_t ILI948x_t4_mm::readCommandN(uint8_t const cmd, uint8_t count_by
     uint8_t dummy = 0;
     uint32_t data = 0;
 
-    while (0 == (p->SHIFTSTAT & (1 << 3))) {
+    while (0 == (p->SHIFTSTAT & _read_shifter_mask)) {
     }
-    dummy = p->SHIFTBUFBYS[3];
+    dummy = p->SHIFTBUFBYS[_read_shifter];
 
     while (count_bytes--) {
-        while (0 == (p->SHIFTSTAT & (1 << 3))) {
+        while (0 == (p->SHIFTSTAT & _read_shifter_mask)) {
         }
-        data = (data << 8) | (p->SHIFTBUFBYS[3] & 0xff);
+        data = (data << 8) | (p->SHIFTBUFBYS[_read_shifter] & 0xff);
     }
     // Serial.printf("Dummy 0x%x, data 0x%x\n", dummy, data);
 
@@ -805,23 +838,62 @@ FASTRUN uint32_t ILI948x_t4_mm::readCommandN(uint8_t const cmd, uint8_t count_by
     FlexIO_Config_SnglBeat();
     return data;
 };
+
+void print_flexio_debug_data(FlexIOHandler *pFlex) {
+    IMXRT_FLEXIO_t *p = &pFlex->port();
+    Serial.println("**********************************");
+    Serial.printf("FlexIO Index: %u\n", pFlex->FlexIOIndex());
+    Serial.printf("CCM_CDCDR: %x\n", CCM_CDCDR);
+    Serial.printf("CCM FlexIO1: %x FlexIO2: %x FlexIO3: %x\n", CCM_CCGR5 & CCM_CCGR5_FLEXIO1(CCM_CCGR_ON),
+        CCM_CCGR3 & CCM_CCGR3_FLEXIO2(CCM_CCGR_ON),  CCM_CCGR7 & CCM_CCGR7_FLEXIO3(CCM_CCGR_ON));
+    Serial.printf("VERID:%x PARAM:%x CTRL:%x PIN: %x\n",p->VERID,p->PARAM,p->CTRL,p->PIN);
+    Serial.printf("SHIFTSTAT:%x SHIFTERR=%x TIMSTAT=%x\n",p->SHIFTSTAT,p->SHIFTERR,p->TIMSTAT);
+    Serial.printf("SHIFTSIEN:%x SHIFTEIEN=%x TIMIEN=%x\n",p->SHIFTSIEN,p->SHIFTEIEN,p->TIMIEN);
+    Serial.printf("SHIFTSDEN:%x SHIFTSTATE=%x\n",p->SHIFTSDEN,p->SHIFTSTATE);
+    Serial.print("SHIFTCTL:");
+    for(int i=0; i<8; i++){
+        Serial.printf(" %08x",p->SHIFTCTL[i]);
+    }
+    Serial.print("\nSHIFTCFG:");
+        for(int i=0; i<8; i++){
+    Serial.printf(" %08x", p->SHIFTCFG[i]);
+    }
+
+    Serial.printf("\nTIMCTL:%x %x %x %x\n",p->TIMCTL[0],p->TIMCTL[1],p->TIMCTL[2],p->TIMCTL[3]);
+    Serial.printf("TIMCFG:%x %x %x %x\n",p->TIMCFG[0],p->TIMCFG[1],p->TIMCFG[2],p->TIMCFG[3]);
+    Serial.printf("TIMCMP:%x %x %x %x\n",p->TIMCMP[0],p->TIMCMP[1],p->TIMCMP[2],p->TIMCMP[3]);
+}
+
 FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat() {
 
+    if (flex_config == CONFIG_SNGLBEAT) return;
+    flex_config = CONFIG_SNGLBEAT;
+
+    static uint8_t DEBUG_COUNT = 2;
+    static bool first_time = true;
+    if (first_time) {
+        first_time = false;
+        Serial.print("Before setting anything");
+        print_flexio_debug_data(pFlex);
+    }
+
     p->CTRL &= ~FLEXIO_CTRL_FLEXEN;
-    p->CTRL |= FLEXIO_CTRL_SWRST;
-    p->CTRL &= ~FLEXIO_CTRL_SWRST;
+    //p->CTRL |= FLEXIO_CTRL_SWRST;
+    //p->CTRL &= ~FLEXIO_CTRL_SWRST;
 
     gpioWrite();
 
     /* Configure the shifters */
-    p->SHIFTCFG[0] =
+    // try setting it twice
+    p->SHIFTCFG[_write_shifter] =
         FLEXIO_SHIFTCFG_INSRC * (1)  /* Shifter input */
         | FLEXIO_SHIFTCFG_SSTOP(0)   /* Shifter stop bit disabled */
         | FLEXIO_SHIFTCFG_SSTART(0)  /* Shifter start bit disabled and loading data on enabled */
         | FLEXIO_SHIFTCFG_PWIDTH(7); /* Bus width */
 
-    p->SHIFTCTL[0] =
-        FLEXIO_SHIFTCTL_TIMSEL(0)            /* Shifter's assigned timer index */
+
+    p->SHIFTCTL[_write_shifter] =
+        FLEXIO_SHIFTCTL_TIMSEL(_flexio_timer)            /* Shifter's assigned timer index */
         | FLEXIO_SHIFTCTL_TIMPOL * (0)       /* Shift on posedge of shift clock */
         | FLEXIO_SHIFTCTL_PINCFG(3)          /* Shifter's pin configured as output */
         | FLEXIO_SHIFTCTL_PINSEL(_flexio_D0) /* Shifter's pin start index */
@@ -829,11 +901,11 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat() {
         | FLEXIO_SHIFTCTL_SMOD(2);           /* Shifter mode as transmit */
 
     /* Configure the timer for shift clock */
-    p->TIMCMP[0] =
+    p->TIMCMP[_flexio_timer] =
         (((1 * 2) - 1) << 8)     /* TIMCMP[15:8] = number of beats x 2 – 1 */
         | ((_buad_div / 2) - 1); /* TIMCMP[7:0] = baud rate divider / 2 – 1 */
 
-    p->TIMCFG[0] =
+    p->TIMCFG[_flexio_timer] =
         FLEXIO_TIMCFG_TIMOUT(0)       /* Timer output logic one when enabled and not affected by reset */
         | FLEXIO_TIMCFG_TIMDEC(0)     /* Timer decrement on FlexIO clock, shift clock equals timer output */
         | FLEXIO_TIMCFG_TIMRST(0)     /* Timer never reset */
@@ -842,8 +914,8 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat() {
         | FLEXIO_TIMCFG_TSTOP(0)      /* Timer stop bit disabled */
         | FLEXIO_TIMCFG_TSTART * (0); /* Timer start bit disabled */
 
-    p->TIMCTL[0] =
-        FLEXIO_TIMCTL_TRGSEL((((0) << 2) | 1)) /* Timer trigger selected as shifter's status flag */
+    p->TIMCTL[_flexio_timer] =
+        FLEXIO_TIMCTL_TRGSEL((((_write_shifter) << 2) | 1)) /* Timer trigger selected as shifter's status flag */
         | FLEXIO_TIMCTL_TRGPOL * (1)           /* Timer trigger polarity as active low */
         | FLEXIO_TIMCTL_TRGSRC * (1)           /* Timer trigger source as internal */
         | FLEXIO_TIMCTL_PINCFG(3)              /* Timer' pin configured as output */
@@ -851,34 +923,47 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat() {
         | FLEXIO_TIMCTL_PINPOL * (1)           /* Timer' pin active low */
         | FLEXIO_TIMCTL_TIMOD(1);              /* Timer mode as dual 8-bit counters baud/bit */
 
+    
+    if (DEBUG_COUNT) {
+      DEBUG_COUNT--;
+      print_flexio_debug_data(pFlex);
+    }
+
     /* Enable FlexIO */
     p->CTRL |= FLEXIO_CTRL_FLEXEN;
+
 }
 
 FASTRUN void ILI948x_t4_mm::FlexIO_Clear_Config_SnglBeat() {
-    p->CTRL &= ~FLEXIO_CTRL_FLEXEN;
-    p->CTRL |= FLEXIO_CTRL_SWRST;
-    p->CTRL &= ~FLEXIO_CTRL_SWRST;
+    if (flex_config == CONFIG_CLEAR) return;
+    flex_config = CONFIG_CLEAR;
 
-    p->SHIFTCFG[0] = 0;
-    p->SHIFTCTL[0] = 0;
-    p->SHIFTSTAT = (1 << 0);
-    p->TIMCMP[0] = 0;
-    p->TIMCFG[0] = 0;
+    p->CTRL &= ~FLEXIO_CTRL_FLEXEN;
+    //p->CTRL |= FLEXIO_CTRL_SWRST;
+    //p->CTRL &= ~FLEXIO_CTRL_SWRST;
+
+    p->SHIFTCFG[_write_shifter] = 0;
+    p->SHIFTCTL[_write_shifter] = 0;
+    p->SHIFTSTAT = _write_shifter_mask;
+    p->TIMCMP[_flexio_timer] = 0;
+    p->TIMCFG[_flexio_timer] = 0;
     p->TIMSTAT = (1U << 0); /* Timer start bit disabled */
-    p->TIMCTL[0] = 0;
+    p->TIMCTL[_flexio_timer] = 0;
 
     /* Enable FlexIO */
     p->CTRL |= FLEXIO_CTRL_FLEXEN;
 }
 
 FASTRUN void ILI948x_t4_mm::FlexIO_Config_MultiBeat() {
+    if (flex_config == CONFIG_MULTIBEAT) return;
+    flex_config = CONFIG_MULTIBEAT;
+
     uint32_t i;
     uint8_t MulBeatWR_BeatQty = SHIFTNUM * sizeof(uint32_t) / sizeof(uint8_t); // Number of beats = number of shifters * beats per shifter
     /* Disable and reset FlexIO */
     p->CTRL &= ~FLEXIO_CTRL_FLEXEN;
-    p->CTRL |= FLEXIO_CTRL_SWRST;
-    p->CTRL &= ~FLEXIO_CTRL_SWRST;
+    //p->CTRL |= FLEXIO_CTRL_SWRST;
+    //p->CTRL &= ~FLEXIO_CTRL_SWRST;
 
     gpioWrite();
 
@@ -890,8 +975,8 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_MultiBeat() {
             | FLEXIO_SHIFTCFG_PWIDTH(8U - 1U); /* 8 bit shift width */
     }
 
-    p->SHIFTCTL[0] =
-        FLEXIO_SHIFTCTL_TIMSEL(0)            /* Shifter's assigned timer index */
+    p->SHIFTCTL[_write_shifter] =
+        FLEXIO_SHIFTCTL_TIMSEL(_flexio_timer)            /* Shifter's assigned timer index */
         | FLEXIO_SHIFTCTL_TIMPOL * (0U)      /* Shift on posedge of shift clock */
         | FLEXIO_SHIFTCTL_PINCFG(3U)         /* Shifter's pin configured as output */
         | FLEXIO_SHIFTCTL_PINSEL(_flexio_D0) /* Shifter's pin start index */
@@ -900,7 +985,7 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_MultiBeat() {
 
     for (i = 1; i <= SHIFTNUM - 1; i++) {
         p->SHIFTCTL[i] =
-            FLEXIO_SHIFTCTL_TIMSEL(0)            /* Shifter's assigned timer index */
+            FLEXIO_SHIFTCTL_TIMSEL(_flexio_timer)            /* Shifter's assigned timer index */
             | FLEXIO_SHIFTCTL_TIMPOL * (0U)      /* Shift on posedge of shift clock */
             | FLEXIO_SHIFTCTL_PINCFG(0U)         /* Shifter's pin configured as output disabled */
             | FLEXIO_SHIFTCTL_PINSEL(_flexio_D0) /* Shifter's pin start index */
@@ -909,11 +994,11 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_MultiBeat() {
     }
 
     /* Configure the timer for shift clock */
-    p->TIMCMP[0] =
+    p->TIMCMP[_flexio_timer] =
         ((MulBeatWR_BeatQty * 2U - 1) << 8) /* TIMCMP[15:8] = number of beats x 2 – 1 */
         | (_buad_div / 2U - 1U);            /* TIMCMP[7:0] = shift clock divide ratio / 2 - 1 */
 
-    p->TIMCFG[0] = FLEXIO_TIMCFG_TIMOUT(0U)       /* Timer output logic one when enabled and not affected by reset */
+    p->TIMCFG[_flexio_timer] = FLEXIO_TIMCFG_TIMOUT(0U)       /* Timer output logic one when enabled and not affected by reset */
                    | FLEXIO_TIMCFG_TIMDEC(0U)     /* Timer decrement on FlexIO clock, shift clock equals timer output */
                    | FLEXIO_TIMCFG_TIMRST(0U)     /* Timer never reset */
                    | FLEXIO_TIMCFG_TIMDIS(2U)     /* Timer disabled on timer compare */
@@ -921,8 +1006,8 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_MultiBeat() {
                    | FLEXIO_TIMCFG_TSTOP(0U)      /* Timer stop bit disabled */
                    | FLEXIO_TIMCFG_TSTART * (0U); /* Timer start bit disabled */
 
-    p->TIMCTL[0] =
-        FLEXIO_TIMCTL_TRGSEL((0 << 2) | 1U) /* Timer trigger selected as highest shifter's status flag */
+    p->TIMCTL[_flexio_timer] =
+        FLEXIO_TIMCTL_TRGSEL((_write_shifter << 2) | 1U) /* Timer trigger selected as highest shifter's status flag */
         | FLEXIO_TIMCTL_TRGPOL * (1U)       /* Timer trigger polarity as active low */
         | FLEXIO_TIMCTL_TRGSRC * (1U)       /* Timer trigger source as internal */
         | FLEXIO_TIMCTL_PINCFG(3U)          /* Timer' pin configured as output */
@@ -967,12 +1052,12 @@ FASTRUN void ILI948x_t4_mm::SglBeatWR_nPrm_8(uint32_t const cmd, const uint8_t *
     DCLow();
 
     /* Write command index */
-    p->SHIFTBUF[0] = cmd;
+    p->SHIFTBUF[_write_shifter] = cmd;
 
     /*Wait for transfer to be completed */
-    while (0 == (p->SHIFTSTAT & (1 << 0))) {
+    while (0 == (p->SHIFTSTAT & _write_shifter_mask)) {
     }
-    while (0 == (p->TIMSTAT & (1 << 0))) {
+    while (0 == (p->TIMSTAT & _flexio_timer_mask)) {
     }
 
     /* De-assert RS pin */
@@ -983,11 +1068,11 @@ FASTRUN void ILI948x_t4_mm::SglBeatWR_nPrm_8(uint32_t const cmd, const uint8_t *
 
     if (length) {
         for (i = 0; i < length; i++) {
-            p->SHIFTBUF[0] = *value++;
-            while (0 == (p->SHIFTSTAT & (1 << 0))) {
+            p->SHIFTBUF[_write_shifter] = *value++;
+            while (0 == (p->SHIFTSTAT & _write_shifter_mask)) {
             }
         }
-        while (0 == (p->TIMSTAT & (1 << 0))) {
+        while (0 == (p->TIMSTAT & _flexio_timer_mask)) {
         }
     }
     microSecondDelay();
@@ -1007,10 +1092,10 @@ FASTRUN void ILI948x_t4_mm::SglBeatWR_nPrm_16(uint32_t const cmd, const uint16_t
     // microSecondDelay();
 
     /* Write command index */
-    p->SHIFTBUF[0] = cmd;
+    p->SHIFTBUF[_write_shifter] = cmd;
 
     /*Wait for transfer to be completed */
-    while (0 == (p->TIMSTAT & (1 << 0))) {
+    while (0 == (p->TIMSTAT & _flexio_timer_mask)) {
     }
     microSecondDelay();
     /* De-assert RS pin */
@@ -1022,23 +1107,23 @@ FASTRUN void ILI948x_t4_mm::SglBeatWR_nPrm_16(uint32_t const cmd, const uint16_t
             buf = *value++;
             while (0 == (p->SHIFTSTAT & (1U << 0))) {
             }
-            p->SHIFTBUF[0] = buf >> 8;
+            p->SHIFTBUF[_write_shifter] = buf >> 8;
 
             while (0 == (p->SHIFTSTAT & (1U << 0))) {
             }
-            p->SHIFTBUF[0] = buf & 0xFF;
+            p->SHIFTBUF[_write_shifter] = buf & 0xFF;
         }
         buf = *value++;
         /* Write the last byte */
         while (0 == (p->SHIFTSTAT & (1U << 0))) {
         }
-        p->SHIFTBUF[0] = buf >> 8;
+        p->SHIFTBUF[_write_shifter] = buf >> 8;
 
         while (0 == (p->SHIFTSTAT & (1U << 0))) {
         }
         p->TIMSTAT |= (1U << 0);
 
-        p->SHIFTBUF[0] = buf & 0xFF;
+        p->SHIFTBUF[_write_shifter] = buf & 0xFF;
 
         /*Wait for transfer to be completed */
         while (0 == (p->TIMSTAT |= (1U << 0))) {
@@ -1064,11 +1149,11 @@ FASTRUN void ILI948x_t4_mm::MulBeatWR_nPrm_DMA(uint32_t const cmd, const void *v
     DCLow();
 
     /* Write command index */
-    p->SHIFTBUF[0] = cmd;
+    p->SHIFTBUF[_write_shifter] = cmd;
 
     /*Wait for transfer to be completed */
 
-    while (0 == (p->TIMSTAT & (1 << 0))) {
+    while (0 == (p->TIMSTAT & _flexio_timer_mask)) {
     }
     microSecondDelay();
     /* De-assert RS pin */
@@ -1083,11 +1168,11 @@ FASTRUN void ILI948x_t4_mm::MulBeatWR_nPrm_DMA(uint32_t const cmd, const void *v
             buf = *newValue++;
             while (0 == (p->SHIFTSTAT & (1U << 0))) {
             }
-            p->SHIFTBUF[0] = buf >> 8;
+            p->SHIFTBUF[_write_shifter] = buf >> 8;
 
             while (0 == (p->SHIFTSTAT & (1U << 0))) {
             }
-            p->SHIFTBUF[0] = buf & 0xFF;
+            p->SHIFTBUF[_write_shifter] = buf & 0xFF;
         }
         // Wait for transfer to be completed
         while (0 == (p->TIMSTAT & (1U << 0))) {
@@ -1210,11 +1295,11 @@ FASTRUN void ILI948x_t4_mm::flexDma_Callback() {
             value = *MulBeatDataRemain++;
             while (0 == (p->SHIFTSTAT & (1U << 0))) {
             }
-            p->SHIFTBUF[0] = value >> 8;
+            p->SHIFTBUF[_write_shifter] = value >> 8;
 
             while (0 == (p->SHIFTSTAT & (1U << 0))) {
             }
-            p->SHIFTBUF[0] = value & 0xFF;
+            p->SHIFTBUF[_write_shifter] = value & 0xFF;
         }
         p->TIMSTAT |= (1U << 0);
         /*
@@ -1224,14 +1309,14 @@ FASTRUN void ILI948x_t4_mm::flexDma_Callback() {
         while(0 == (p->SHIFTSTAT & (1U << 0)))
             {
             }
-        p->SHIFTBUF[0] = value >> 8;
+        p->SHIFTBUF[_write_shifter] = value >> 8;
 
         while(0 == (p->SHIFTSTAT & (1U << 0)))
         {
         }
         p->TIMSTAT |= (1U << 0);
 
-        p->SHIFTBUF[0] = value & 0xFF;
+        p->SHIFTBUF[_write_shifter] = value & 0xFF;
         */
         /*Wait for transfer to be completed */
         while (0 == (p->TIMSTAT |= (1U << 0))) {
@@ -1273,10 +1358,10 @@ void ILI948x_t4_mm::beginWrite16BitColors() {
     // microSecondDelay();
 
     /* Write command index */
-    p->SHIFTBUF[0] = ILI9488_RAMWR;
+    p->SHIFTBUF[_write_shifter] = ILI9488_RAMWR;
 
     /*Wait for transfer to be completed */
-    while (0 == (p->TIMSTAT & (1 << 0))) {
+    while (0 == (p->TIMSTAT & _flexio_timer_mask)) {
     }
     microSecondDelay();
     /* De-assert RS pin */
@@ -1287,11 +1372,11 @@ void ILI948x_t4_mm::beginWrite16BitColors() {
 void ILI948x_t4_mm::write16BitColor(uint16_t color) {
     while (0 == (p->SHIFTSTAT & (1U << 0))) {
     }
-    p->SHIFTBUF[0] = color >> 8;
+    p->SHIFTBUF[_write_shifter] = color >> 8;
 
     while (0 == (p->SHIFTSTAT & (1U << 0))) {
     }
-    p->SHIFTBUF[0] = color & 0xFF;
+    p->SHIFTBUF[_write_shifter] = color & 0xFF;
 }
 
 void ILI948x_t4_mm::endWrite16BitColors() {
@@ -1352,10 +1437,10 @@ void ILI948x_t4_mm::readRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_
     // microSecondDelay();
 
     /* Write command index */
-    p->SHIFTBUF[0] = ILI9488_RAMRD;
+    p->SHIFTBUF[_write_shifter] = ILI9488_RAMRD;
 
     /*Wait for transfer to be completed */
-    while (0 == (p->TIMSTAT & (1 << 0))) {
+    while (0 == (p->TIMSTAT & _flexio_timer_mask)) {
     }
     microSecondDelay();
 
@@ -1371,9 +1456,9 @@ void ILI948x_t4_mm::readRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_
 #define DUMMY_COUNT 1
     for (uint8_t i = 0; i < DUMMY_COUNT; i++) {
         // read in dummy bytes
-        while (0 == (p->SHIFTSTAT & (1 << 3))) {
+        while (0 == (p->SHIFTSTAT & _read_shifter_mask)) {
         }
-        dummy = p->SHIFTBUFBYS[3];
+        dummy = p->SHIFTBUFBYS[_read_shifter];
         // Serial.printf("\tD%u=%x\n", i, dummy);
     }
     /*Wait for transfer to be completed */
@@ -1384,11 +1469,11 @@ void ILI948x_t4_mm::readRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_
         while (count_pixels--) {
             while (0 == (p->SHIFTSTAT & (1U << 3))) {
             }
-            uint8_t b1 = (p->SHIFTBUFBYS[3] & 0xff);
+            uint8_t b1 = (p->SHIFTBUFBYS[_read_shifter] & 0xff);
 
             while (0 == (p->SHIFTSTAT & (1U << 3))) {
             }
-            *pc++ = (p->SHIFTBUFBYS[3] & 0xff);
+            *pc++ = (p->SHIFTBUFBYS[_read_shifter] & 0xff);
             *pc++ = b1;
         }
     } else {
@@ -1397,15 +1482,15 @@ void ILI948x_t4_mm::readRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_
             uint8_t r, g, b;
             while (0 == (p->SHIFTSTAT & (1U << 3))) {
             }
-            r = (p->SHIFTBUFBYS[3] & 0xff);
+            r = (p->SHIFTBUFBYS[_read_shifter] & 0xff);
 
             while (0 == (p->SHIFTSTAT & (1U << 3))) {
             }
-            g = (p->SHIFTBUFBYS[3] & 0xff);
+            g = (p->SHIFTBUFBYS[_read_shifter] & 0xff);
 
             while (0 == (p->SHIFTSTAT & (1U << 3))) {
             }
-            b = (p->SHIFTBUFBYS[3] & 0xff);
+            b = (p->SHIFTBUFBYS[_read_shifter] & 0xff);
 
             *pcolors++ = color565(r, g, b);
         }

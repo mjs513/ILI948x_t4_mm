@@ -2,7 +2,7 @@
 // Default flexio pins - Can be setup for different teensy 4.x boards
 //=============================================================================
 
-#if defined(ARDUINO_TEENSY_MICROMOD)
+//#if defined(ARDUINO_TEENSY_MICROMOD)
 // FLEXIO2 pins.
 
 #define DISPLAY_WR 10 // FLEXIO2:0
@@ -16,4 +16,4 @@
 #define DISPLAY_D5 45 // 45      B0_09   FlexIO2:9
 #define DISPLAY_D6 6  // 6       B0_10   FlexIO2:10
 #define DISPLAY_D7 9  // 9       B0_11   FlexIO2:11
-#endif
+//#endif

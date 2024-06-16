@@ -5,7 +5,7 @@
 #include "ILI948x_t4_mm.h"
 #include "flexio_teensy_mm.c"
 
-ILI948x_t4_mm lcd = ILI948x_t4_mm(13, 11, 7); //(dc, cs, rst)
+ILI948x_t4_mm lcd = ILI948x_t4_mm(13, 11, 5); //(dc, cs, rst)
 
 #define CENTER Teensy_Parallel_GFX::CENTER
 
@@ -23,7 +23,8 @@ void setup() {
    * begin defaults to ILI9488 and 20Mhz:
    *     lcd.begin();
   */
-  lcd.begin(ILI9488, 30);
+  lcd.setFlexIOPins(7, 8);
+  lcd.begin(ILI9486, 16);
   lcd.setBitDepth(16);
   test_display();
   lcd.setRotation(3);

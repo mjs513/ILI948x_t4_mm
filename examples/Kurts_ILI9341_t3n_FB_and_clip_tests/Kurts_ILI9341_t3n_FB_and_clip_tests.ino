@@ -27,7 +27,11 @@ uint8_t use_fb = 0;
 #define ORIGIN_TEST_X 50
 #define ORIGIN_TEST_Y 50
 
+#ifdef ARDUINO_TEENSY41
+ILI948x_t4_mm tft = ILI948x_t4_mm(10, 9, 8);  //(dc, cs, rst)
+#else
 ILI948x_t4_mm tft = ILI948x_t4_mm(13, 11, 5);  //(dc, cs, rst)
+#endif
 
 void setup() {
     while (!Serial && (millis() < 4000))
@@ -54,9 +58,13 @@ void setup() {
    * begin defaults to ILI9488 and 20Mhz:
    *     lcd.begin();
   */
+#ifdef ARDUINO_TEENSY_MICROMOD
     tft.setFlexIOPins(7, 8);
 //    tft.setFlexIOPins(7, 8, 40);
 //    tft.setFlexIOPins(7, 8, 40, 41, 42, 43, 44, 45, 6, 9);
+#elif defined(ARDUINO_TEENSY41)
+    tft.setFlexIOPins(36, 37, 19);  // Teensy 4.1 pin
+#endif    
     Serial.println("After setflexio pins"); Serial.flush();
     tft.begin(ILI9486, 12);
     tft.setBitDepth(16);
@@ -95,7 +103,7 @@ void SetupOrClearClipRectAndOffsets() {
         int w = tft.width() / 2;
         int h = tft.height() / 2;
         tft.drawRect(x, y, w, h, ILI9488_ORANGE);
-        //  tft.updateScreen();
+        tft.updateScreen();
         tft.setClipRect(x + 1, y + 1, w - 2, h - 2);
         delay(250);
 
@@ -379,7 +387,7 @@ const uint8_t pict4bpp[] = {
 void drawTestScreen() {
     Serial.printf("Use FB: %d ", use_fb);
     Serial.flush();
-    //  tft.useFrameBuffer(use_fb);
+    tft.useFrameBuffer(use_fb);
     SetupOrClearClipRectAndOffsets();
     uint32_t start_time = millis();
     tft.fillScreen(use_fb ? ILI9488_RED : ILI9488_BLACK);
@@ -482,7 +490,7 @@ void drawTestScreen() {
 }
 
 void fillScreenTest() {
-    //tft.useFrameBuffer(0);
+    tft.useFrameBuffer(0);
     SetupOrClearClipRectAndOffsets();
 
     tft.fillScreen(ILI9488_RED);
@@ -509,7 +517,7 @@ void drawTextScreen(bool fOpaque) {
     SetupOrClearClipRectAndOffsets();
     tft.setTextSize(1);
     uint32_t start_time = millis();
-    //  tft.useFrameBuffer(use_fb);
+    tft.useFrameBuffer(use_fb);
     tft.fillScreen(use_fb ? ILI9488_RED : ILI9488_BLACK);
     tft.setFont(Arial_28_Bold);
     //t  tft.setFont(Arial_40_Bold);
@@ -580,7 +588,7 @@ void drawTextScreen(bool fOpaque) {
     tft.setTextSize(1);
 
 
-    //tft.updateScreen();
+    tft.updateScreen();
     Serial.printf("Use FB: %d OP: %d, DT: %d OR: %d\n", use_fb, fOpaque, use_set_origin, millis() - start_time);
 }
 
@@ -594,7 +602,7 @@ void drawGFXTextScreen(bool fOpaque) {
     else
         tft.setTextColor(ILI9488_WHITE);
     uint32_t start_time = millis();
-    //tft.useFrameBuffer(use_fb);
+    tft.useFrameBuffer(use_fb);
     tft.fillScreen(use_fb ? ILI9488_RED : ILI9488_BLACK);
     tft.setFont(&FreeMonoBoldOblique12pt7b);
     tft.println("MonoBold");
@@ -606,7 +614,7 @@ void drawGFXTextScreen(bool fOpaque) {
     tft.println("ABCDEFGHIJKLMNO");
     tft.println("abcdefghijklmno");
     tft.println("0123456789!@#$%^&*()_");
-    //tft.updateScreen();
+    tft.updateScreen();
     tft.setTextSize(1);
     tft.setFont();
     Serial.printf("Use FB: %d OP: %d, DT: %d\n", use_fb, fOpaque, millis() - start_time);
