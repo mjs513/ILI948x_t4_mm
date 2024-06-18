@@ -789,6 +789,11 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Config_SnglBeat_Read() {
         | FLEXIO_TIMCTL_PINPOL * (1)                       /* Timer' pin active low */
         | FLEXIO_TIMCTL_TIMOD(1);                          /* Timer mode as dual 8-bit counters baud/bit */
 
+
+    // Clear the shifter status 
+    p->SHIFTSTAT = _read_shifter_mask;
+    p->SHIFTERR = _read_shifter_mask;
+    
     /* Enable FlexIO */
     p->CTRL |= FLEXIO_CTRL_FLEXEN;
     DBGPrintf("ILI948x_t4x_p::FlexIO_Config_SnglBeat_Read - Exit\n");
@@ -800,6 +805,7 @@ FASTRUN uint8_t ILI948x_t4x_p::readCommand(uint8_t const cmd) {
     }
 
     FlexIO_Config_SnglBeat();
+    CSLow();
     DCLow();
 
     /* Write command index */
@@ -820,10 +826,15 @@ FASTRUN uint8_t ILI948x_t4x_p::readCommand(uint8_t const cmd) {
     uint8_t data = 0;
 
     waitReadShiftStat(__LINE__);
+    // digitalToggleFast(2);
     dummy = p->SHIFTBUFBYS[_read_shifter];
 
     waitReadShiftStat(__LINE__);
+    // digitalToggleFast(2);
     data = p->SHIFTBUFBYS[_read_shifter];
+
+    CSHigh();
+    microSecondDelay();
     // Serial.printf("Dummy 0x%x, data 0x%x\n", dummy, data);
 
     // Set FlexIO back to Write mode
@@ -838,6 +849,7 @@ FASTRUN uint32_t ILI948x_t4x_p::readCommandN(uint8_t const cmd, uint8_t count_by
     }
 
     FlexIO_Config_SnglBeat();
+    CSLow();
     DCLow();
 
     /* Write command index */
@@ -858,15 +870,20 @@ FASTRUN uint32_t ILI948x_t4x_p::readCommandN(uint8_t const cmd, uint8_t count_by
     uint32_t data = 0;
 
     waitReadShiftStat(__LINE__);
+    // digitalToggleFast(2);
     dummy = p->SHIFTBUFBYS[_read_shifter];
 
     while (count_bytes--) {
         waitReadShiftStat(__LINE__);
         data = (data << 8) | (p->SHIFTBUFBYS[_read_shifter] & 0xff);
+        // digitalToggleFast(2);
     }
     // Serial.printf("Dummy 0x%x, data 0x%x\n", dummy, data);
 
     // Set FlexIO back to Write mode
+    microSecondDelay();
+    CSHigh();
+    microSecondDelay();
     FlexIO_Config_SnglBeat();
     return data;
 };
@@ -1472,6 +1489,7 @@ void ILI948x_t4x_p::readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, u
         // read in dummy bytes
         waitReadShiftStat(__LINE__);
         dummy = p->SHIFTBUFBYS[_read_shifter];
+        // digitalToggleFast(2);
         // Serial.printf("\tD%u=%x\n", i, dummy);
     }
     /*Wait for transfer to be completed */
@@ -1480,12 +1498,12 @@ void ILI948x_t4x_p::readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, u
         int count_pixels = w * h;
         uint8_t *pc = (uint8_t *)pcolors;
         while (count_pixels--) {
-            while (0 == (p->SHIFTSTAT & (1U << 3))) {
-            }
+            waitReadShiftStat(__LINE__);
+            // digitalToggleFast(2);
             uint8_t b1 = (p->SHIFTBUFBYS[_read_shifter] & 0xff);
 
-            while (0 == (p->SHIFTSTAT & (1U << 3))) {
-            }
+            waitReadShiftStat(__LINE__);
+            // digitalToggleFast(2);
             *pc++ = (p->SHIFTBUFBYS[_read_shifter] & 0xff);
             *pc++ = b1;
         }
@@ -1493,22 +1511,24 @@ void ILI948x_t4x_p::readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, u
         int count_pixels = w * h;
         while (count_pixels--) {
             uint8_t r, g, b;
-            while (0 == (p->SHIFTSTAT & (1U << 3))) {
-            }
+            waitReadShiftStat(__LINE__);
+            // digitalToggleFast(2);
             r = (p->SHIFTBUFBYS[_read_shifter] & 0xff);
 
-            while (0 == (p->SHIFTSTAT & (1U << 3))) {
-            }
+            waitReadShiftStat(__LINE__);
+            // digitalToggleFast(2);
             g = (p->SHIFTBUFBYS[_read_shifter] & 0xff);
 
-            while (0 == (p->SHIFTSTAT & (1U << 3))) {
-            }
+            waitReadShiftStat(__LINE__);
+            // digitalToggleFast(2);
             b = (p->SHIFTBUFBYS[_read_shifter] & 0xff);
 
             *pcolors++ = color565(r, g, b);
         }
     }
 
+    CSHigh();
+    microSecondDelay();
     // Set FlexIO back to Write mode
     FlexIO_Config_SnglBeat();
 }
