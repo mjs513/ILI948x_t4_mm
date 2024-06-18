@@ -1,5 +1,5 @@
 # ILI948x_t4x_p
-## A basic display driver for ILI948X series on a Teensy Micromod
+## A basic display driver for ILI948X series on a Teensy 4.1 and Micromod 
 
 **Disclaimer: This is an experimental library, currently a WIP. I cannot guarantee that all functions will work nor can I guarantee that this library will work with other libraries. Use at your own risk**  
 
@@ -11,9 +11,9 @@ The default bus speed is set to 12Mhz and can be lowered or raised with a simple
 First include the library and create a constructor:
 ```
 #include "ILI948x_t4x_p.h"
-#define CS 11
-#define DC 13
-#define RST 7
+#define CS 5
+#define DC 4
+#define RST 3
 ILI948x_t4x_p lcd = ILI948x_t4x_p(DC,CS,RST);
 ```
 You can use and GPIO pins for CS, DC and RST

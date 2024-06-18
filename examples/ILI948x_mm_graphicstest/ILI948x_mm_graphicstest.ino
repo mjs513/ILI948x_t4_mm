@@ -16,7 +16,7 @@
 #ifdef ARDUINO_TEENSY41
 ILI948x_t4x_p lcd = ILI948x_t4x_p(10, 8, 9);  //(dc, cs, rst)
 #else
-ILI948x_t4x_p lcd = ILI948x_t4x_p(13, 11, 5);  //(dc, cs, rst)
+ILI948x_t4x_p lcd = ILI948x_t4x_p(4, 5, 3);  //(dc, cs, rst)
 #endif
 
 #define CENTER Teensy_Parallel_GFX::CENTER

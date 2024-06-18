@@ -72,7 +72,7 @@ const ili_fonts_test_t font_test_list[] = {
 #ifdef ARDUINO_TEENSY41
 ILI948x_t4x_p tft = ILI948x_t4x_p(10, 8, 9);  //(dc, cs, rst)
 #else
-ILI948x_t4x_p tft = ILI948x_t4x_p(13, 11, 5);  //(dc, cs, rst)
+ILI948x_t4x_p tft = ILI948x_t4x_p(4, 5, 3);  //(dc, cs, rst)
 #endif
 
 uint8_t test_screen_rotation = 0;
