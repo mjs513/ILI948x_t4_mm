@@ -12,6 +12,18 @@
 // This sketch depends on the fonts that are contained in the library
 //     https://github.com/mjs513/ILI9341_fonts
 //-------------------------------------------------------------------
+// Set which Display we are using and at what speed
+// Currently I have options for both MICROMOD and T42 to make it
+// easier for testing
+#ifdef ARDUINO_TEENSY_MICROMOD
+#define ILI948X ILI9486
+#define ILI948X_SPEED_MHX 24
+#elif defined(ARDUINO_TEENSY41)
+#define ILI948X ILI9488
+#define ILI948X_SPEED_MHX 24
+#endif
+
+
 #include <MemoryHexDump.h>
 
 #include <Teensy_Parallel_GFX.h>
@@ -72,21 +84,17 @@ void setup() {
    * begin defaults to ILI9488 and 20Mhz:
    *     lcd.begin();
   */
-#ifdef ARDUINO_TEENSY_MICROMOD
-    tft.setFlexIOPins(7, 8);
-//    tft.setFlexIOPins(7, 8, 40);
-//    tft.setFlexIOPins(7, 8, 40, 41, 42, 43, 44, 45, 6, 9);
-    Serial.println("After setflexio pins");
-    Serial.flush();
-    tft.begin(ILI9486, 12);
-#elif defined(ARDUINO_TEENSY41)
-    //tft.setFlexIOPins(36, 37, 19);             // Teensy 4.1 pin
-    tft.begin(ILI9488, 12);
-#endif
+    // Begin optionally change FlexIO pins.
+    //    WRITE, READ, D0, [D1 - D7]
+    //    tft.setFlexIOPins(7, 8);
+    //    tft.setFlexIOPins(7, 8, 40);
+    //    tft.setFlexIOPins(7, 8, 40, 41, 42, 43, 44, 45, 6, 9);
+    //tft.setFlexIOPins(7, 8);
+    tft.begin(ILI948X, ILI948X_SPEED_MHX);
+
     tft.setBitDepth(16);
-//#ifndef ARDUINO_TEENSY41
+
     tft.displayInfo();
-//#endif
     //  tft.setFrameBuffer(tft_frame_buffer);
 
     tft.setRotation(ROTATION);
