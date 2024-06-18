@@ -42,7 +42,7 @@ uint8_t use_fb = 0;
 #define ORIGIN_TEST_Y 50
 
 #ifdef ARDUINO_TEENSY41
-ILI948x_t4_mm tft = ILI948x_t4_mm(10, 9, 8);  //(dc, cs, rst)
+ILI948x_t4_mm tft = ILI948x_t4_mm(10, 8, 9);  //(dc, cs, rst)
 #else
 ILI948x_t4_mm tft = ILI948x_t4_mm(13, 11, 5);  //(dc, cs, rst)
 #endif
@@ -76,15 +76,17 @@ void setup() {
     tft.setFlexIOPins(7, 8);
 //    tft.setFlexIOPins(7, 8, 40);
 //    tft.setFlexIOPins(7, 8, 40, 41, 42, 43, 44, 45, 6, 9);
-#elif defined(ARDUINO_TEENSY41)
-    tft.setFlexIOPins(36, 37, 19);             // Teensy 4.1 pin
-#endif
     Serial.println("After setflexio pins");
     Serial.flush();
     tft.begin(ILI9486, 12);
+#elif defined(ARDUINO_TEENSY41)
+    //tft.setFlexIOPins(36, 37, 19);             // Teensy 4.1 pin
+    tft.begin(ILI9488, 12);
+#endif
     tft.setBitDepth(16);
+//#ifndef ARDUINO_TEENSY41
     tft.displayInfo();
-
+//#endif
     //  tft.setFrameBuffer(tft_frame_buffer);
 
     tft.setRotation(ROTATION);
@@ -442,6 +444,7 @@ void drawTestScreen() {
     tft.fillRect(BAND_START_X + BAND_WIDTH * 6, BAND_START_Y, BAND_WIDTH, BAND_HEIGHT, ILI9488_CYAN);
     tft.fillRect(BAND_START_X + BAND_WIDTH * 7, BAND_START_Y, BAND_WIDTH, BAND_HEIGHT, ILI9488_PINK);
     //WaitForUserInput();
+//#ifndef ARDUINO_TEENSY41
     memset(pixel_data, 0, sizeof(pixel_data));
     tft.readRect(BAND_START_X, BAND_START_Y, BAND_WIDTH * 8, BAND_HEIGHT, pixel_data);
     MemoryHexDump(Serial, pixel_data, BAND_WIDTH * 8 * 2, true, "\nColor bars:\n");
@@ -483,7 +486,7 @@ void drawTestScreen() {
         ppd16++;
     }
     tft.writeRect8BPP(200, 50, 50, 50, (uint8_t *)pixel_data, palette);
-
+//#endif
     palette[0] = ILI9488_CYAN;
     palette[1] = ILI9488_OLIVE;
     tft.writeRect1BPP(75, 100, 16, 16, pict1bpp, palette);
@@ -503,11 +506,11 @@ void drawTestScreen() {
 
     tft.fillCircle(380, 220, 80, ILI9488_GREEN);
     tft.fillCircle(380, 220, 60, ILI9488_BLUE);
-    tft.drawCircle(380, 220, 40, ILI9488_RED);
+    tft.drawCircle(380, 220, 40, ILI9488_PINK);
     tft.drawCircle(380, 220, 20, ILI9488_YELLOW);
 
     tft.fillTriangle(20, 300, 170, 300, 95, 240, ILI9488_GREEN);
-    tft.fillTriangle(40, 280, 150, 280, 95, 220, ILI9488_RED);
+    tft.fillTriangle(40, 280, 150, 280, 95, 220, ILI9488_PINK);
     tft.drawTriangle(60, 260, 130, 260, 95, 200, ILI9488_YELLOW);
     tft.drawTriangle(80, 240, 110, 240, 95, 180, ILI9488_BLUE);
 

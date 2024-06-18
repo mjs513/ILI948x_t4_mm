@@ -164,8 +164,8 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX {
     uint32_t readCommandN(uint8_t const cmd, uint8_t count_bytes);
 
     // Added functions to read pixel data...
-    uint16_t readPixel(int16_t x, int16_t y);
-    void readRect(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *pcolors);
+    // uint16_t readPixel(int16_t x, int16_t y);
+    void readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *pcolors);
 
     // void pushPixels16bitTearing(uint16_t * pcolors, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2 );
     // void pushPixels24bitTearing(uint16_t * pcolors, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2 );
@@ -205,8 +205,66 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX {
             _previous_addr_y1 = y1;
         }
     }
+    enum { WRITE_SHIFT_TO = 20,
+           READ_SHIFT_TO = 20,
+           WRITE_TIMER_TO = 20 };
+    void waitWriteShiftStat(int error_identifier = 0) __attribute__((always_inline)) {
+        elapsedMillis em = 0;
+        while (0 == (p->SHIFTSTAT & _write_shifter_mask)) {
+            if (em > WRITE_SHIFT_TO) {
+                Serial.printf(">>>waitWriteShiftStat(%d) TO\n", error_identifier);
+                if (Serial.available()) {
+                    while (Serial.read() != -1) {
+                    }
+                    Serial.println("*** Paused ***");
+                    while (Serial.read() == -1) {
+                    }
+                    while (Serial.read() != -1) {
+                    }
+                }
+                return; // bail
+            }
+        }
+    }
 
-    // kurts experiment
+    void waitReadShiftStat(int error_identifier = 0) __attribute__((always_inline)) {
+        elapsedMillis em = 0;
+        while (0 == (p->SHIFTSTAT & _read_shifter_mask)) {
+            if (em > READ_SHIFT_TO) {
+                Serial.printf(">>>waitReadShiftStat(%d) TO\n", error_identifier);
+                if (Serial.available()) {
+                    while (Serial.read() != -1) {
+                    }
+                    Serial.println("*** Paused ***");
+                    while (Serial.read() == -1) {
+                    }
+                    while (Serial.read() != -1) {
+                    }
+                }
+                return; // bail
+            }
+        }
+    }
+
+    void waitTimStat(int error_identifier = 0) __attribute__((always_inline)) {
+        elapsedMillis em = 0;
+        while (0 == (p->TIMSTAT & _flexio_timer_mask)) {
+            if (em > WRITE_SHIFT_TO) {
+                Serial.printf(">>>waitWriteShiftStat(%d) TO\n", error_identifier);
+                if (Serial.available()) {
+                    while (Serial.read() != -1) {
+                    }
+                    Serial.println("*** Paused ***");
+                    while (Serial.read() == -1) {
+                    }
+                    while (Serial.read() != -1) {
+                    }
+                }
+                return; // bail
+            }
+        }
+    }
+
     void beginWrite16BitColors();
     void write16BitColor(uint16_t color);
     void endWrite16BitColors();
@@ -268,7 +326,10 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX {
     void gpioRead();
 
     void FlexIO_Init();
-    typedef enum {CONFIG_CLEAR=0, CONFIG_SNGLBEAT, CONFIG_MULTIBEAT, CONFIG_SNGLREAD} Flexio_config_state_t;
+    typedef enum { CONFIG_CLEAR = 0,
+                   CONFIG_SNGLBEAT,
+                   CONFIG_MULTIBEAT,
+                   CONFIG_SNGLREAD } Flexio_config_state_t;
     Flexio_config_state_t flex_config = CONFIG_CLEAR;
     void FlexIO_Config_SnglBeat();
     void FlexIO_Clear_Config_SnglBeat();
