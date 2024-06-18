@@ -1,4 +1,4 @@
-# ILI948x_t4_mm
+# ILI948x_t4x_p
 ## A basic display driver for ILI948X series on a Teensy Micromod
 
 **Disclaimer: This is an experimental library, currently a WIP. I cannot guarantee that all functions will work nor can I guarantee that this library will work with other libraries. Use at your own risk**  
@@ -10,11 +10,11 @@ The default bus speed is set to 12Mhz and can be lowered or raised with a simple
 
 First include the library and create a constructor:
 ```
-#include "ILI948x_t4_mm.h"
+#include "ILI948x_t4x_p.h"
 #define CS 11
 #define DC 13
 #define RST 7
-ILI948x_t4_mm lcd = ILI948x_t4_mm(DC,CS,RST);
+ILI948x_t4x_p lcd = ILI948x_t4x_p(DC,CS,RST);
 ```
 You can use and GPIO pins for CS, DC and RST
 
@@ -33,7 +33,7 @@ Note: The are FLEXIO 2 pins on the Micromod The flexio pins shown in ()
    
 in the setup function call:
 ```
-ILI948x_t4_mm::begin();
+ILI948x_t4x_p::begin();
 ```
 The default baud rate is 20Mhz
 
@@ -42,11 +42,11 @@ In the begin(n) function you can pass 2,4,8,12,20,24, 30 and 40 to lower or rais
 
 Call the following function for a polling method write:
 ```
-ILI948x_t4_mm::pushPixels16bit(flexio_teensy_mm,0,0,480,320);
+ILI948x_t4x_p::pushPixels16bit(flexio_teensy_mm,0,0,480,320);
 ```
 or call the following function for an async DMA write
 ```
-ILI948x_t4_mm::pushPixels16bitDMA(flexio_teensy_mm,0,0,480,320);
+ILI948x_t4x_p::pushPixels16bitDMA(flexio_teensy_mm,0,0,480,320);
 ```
 to push the image data, the arguments are as follows:
 * uint16_t color array (RGB565)
@@ -60,17 +60,17 @@ Additional API's:
 
 Set rotation: 1,2,3,4
 ```
-ILI948x_t4_mm::setRotation(n);
+ILI948x_t4x_p::setRotation(n);
 ```
 
 Invert display color (true/false)
 ```
-ILI948x_t4_mm::invertDisplay(bool);
+ILI948x_t4x_p::invertDisplay(bool);
 ```
 
 Register a callback to trigger when the DMA transfer completes - ONLY ON DMA METHOD
 ```
-ILI948x_t4_mm::onCompleteCB(CBF callback);
+ILI948x_t4x_p::onCompleteCB(CBF callback);
 ```
-![Image of TFT with Teensy MM image](https://github.com/david-res/ILI948x_t4_mm/blob/master/mm_flexio_example.jpg)
+![Image of TFT with Teensy MM image](https://github.com/david-res/ILI948x_t4x_p/blob/master/mm_flexio_example.jpg)
 

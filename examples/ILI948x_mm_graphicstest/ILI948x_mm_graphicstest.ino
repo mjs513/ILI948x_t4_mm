@@ -2,10 +2,10 @@
 #include <Adafruit_GFX.h>
 #include <Teensy_Parallel_GFX.h>
 
-#include "ILI948x_t4_mm.h"
+#include "ILI948x_t4x_p.h"
 #include "flexio_teensy_mm.c"
 
-ILI948x_t4_mm lcd = ILI948x_t4_mm(13, 11, 5); //(dc, cs, rst)
+ILI948x_t4x_p lcd = ILI948x_t4x_p(13, 11, 5); //(dc, cs, rst)
 
 #define CENTER Teensy_Parallel_GFX::CENTER
 

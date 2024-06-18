@@ -1,5 +1,5 @@
-#ifndef _ILI948x_t4_mm_H_
-#define _ILI948x_t4_mm_H_
+#ifndef _ILI948X_T4X_P_H_
+#define _ILI948X_T4X_P_H_
 
 // uncomment below the line corresponding to your screen:
 
@@ -125,9 +125,9 @@ enum {
 };
 
 #ifdef __cplusplus
-class ILI948x_t4_mm : public Teensy_Parallel_GFX {
+class ILI948x_t4x_p : public Teensy_Parallel_GFX {
   public:
-    ILI948x_t4_mm(int8_t dc, int8_t cs = -1, int8_t rst = -1);
+    ILI948x_t4x_p(int8_t dc, int8_t cs = -1, int8_t rst = -1);
     void begin(uint8_t display_name = ILI9488, uint8_t buad_div = 20);
     uint8_t getBusSpd();
 
@@ -348,7 +348,7 @@ class ILI948x_t4_mm : public Teensy_Parallel_GFX {
     bool isCB = false;
     void _onCompleteCB();
 
-    static ILI948x_t4_mm *dmaCallback;
+    static ILI948x_t4x_p *dmaCallback;
 };
 #endif //__cplusplus
-#endif //_IILI948x_t4_mm_H_
+#endif //_IILI948x_t4x_p.h_

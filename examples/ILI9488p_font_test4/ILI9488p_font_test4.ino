@@ -13,7 +13,7 @@
 #include <Teensy_Parallel_GFX.h>
 
 #include <SPI.h>
-#include "ILI948x_t4_mm.h"
+#include "ILI948x_t4x_p.h"
 
 #include "font_Arial.h"
 #include "font_ArialBold.h"
@@ -24,7 +24,7 @@
 #include "font_Crystal.h"
 #include "font_ChanceryItalic.h"
 
-#define CENTER ILI948x_t4_mm::CENTER
+#define CENTER ILI948x_t4x_p::CENTER
 
 // maybe a few GFX FOnts?
 #include <Fonts/FreeMono9pt7b.h>
@@ -57,7 +57,7 @@ const ili_fonts_test_t font_test_list[] = {
 
 } ;
 
-ILI948x_t4_mm tft = ILI948x_t4_mm(13,11,7); //(dc, cs, rst, rd)
+ILI948x_t4x_p tft = ILI948x_t4x_p(13,11,7); //(dc, cs, rst, rd)
 
 uint8_t test_screen_rotation = 0;
 

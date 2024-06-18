@@ -1,5 +1,5 @@
-#include "ILI948x_t4_mm.h"
-#include "ILI948x_t4_mm_default_flexio_pins.h"
+#include "ILI948x_t4x_p.h"
+#include "ILI948x_t4x_p_default_flexio_pins.h"
 
 // DMAMEM uint32_t framebuff[DATABUFBYTES];
 
@@ -132,13 +132,13 @@ PROGMEM const uint8_t R61519_init_commands[] = {
 
 //--------------------------------------------------
 
-FLASHMEM ILI948x_t4_mm::ILI948x_t4_mm(int8_t dc, int8_t cs, int8_t rst)
+FLASHMEM ILI948x_t4x_p::ILI948x_t4x_p(int8_t dc, int8_t cs, int8_t rst)
     : Teensy_Parallel_GFX(_TFTWIDTH, _TFTHEIGHT), _dc(dc), _cs(cs), _rst(rst),
       _data_pins{DISPLAY_D0, DISPLAY_D1, DISPLAY_D2, DISPLAY_D3, DISPLAY_D4, DISPLAY_D5, DISPLAY_D6, DISPLAY_D7},
       _wr_pin(DISPLAY_WR), _rd_pin(DISPLAY_RD) {
 }
 
-FLASHMEM void ILI948x_t4_mm::begin(uint8_t display_name, uint8_t buad_div) {
+FLASHMEM void ILI948x_t4x_p::begin(uint8_t display_name, uint8_t buad_div) {
     // DBGPrintf("Bus speed: %d Mhz \n", buad_div);
 
     _display_name = display_name;
@@ -212,7 +212,7 @@ FLASHMEM void ILI948x_t4_mm::begin(uint8_t display_name, uint8_t buad_div) {
     setTextSize(1);
 }
 
-FLASHMEM uint8_t ILI948x_t4_mm::setBitDepth(uint8_t bitDepth) {
+FLASHMEM uint8_t ILI948x_t4x_p::setBitDepth(uint8_t bitDepth) {
     uint8_t bd;
 
     switch (bitDepth) {
@@ -240,11 +240,11 @@ FLASHMEM uint8_t ILI948x_t4_mm::setBitDepth(uint8_t bitDepth) {
     return _bitDepth;
 }
 
-FLASHMEM uint8_t ILI948x_t4_mm::getBitDepth() {
+FLASHMEM uint8_t ILI948x_t4x_p::getBitDepth() {
     return _bitDepth;
 }
 
-FLASHMEM void ILI948x_t4_mm::setFrameRate(uint8_t frRate) {
+FLASHMEM void ILI948x_t4x_p::setFrameRate(uint8_t frRate) {
     _frameRate = frRate;
 
     uint8_t fr28Hz[2] = {0x00, 0x11}; // 28.78fps, 17 clocks
@@ -296,11 +296,11 @@ FLASHMEM void ILI948x_t4_mm::setFrameRate(uint8_t frRate) {
     SglBeatWR_nPrm_8(ILI9488_FRMCTR1, frData, 2);
 }
 
-FLASHMEM uint8_t ILI948x_t4_mm::getFrameRate() {
+FLASHMEM uint8_t ILI948x_t4x_p::getFrameRate() {
     return _frameRate;
 }
 
-FLASHMEM void ILI948x_t4_mm::setTearingEffect(bool tearingOn) {
+FLASHMEM void ILI948x_t4x_p::setTearingEffect(bool tearingOn) {
 
     _bTearingOn = tearingOn;
     uint8_t mode = 0x00;
@@ -314,22 +314,22 @@ FLASHMEM void ILI948x_t4_mm::setTearingEffect(bool tearingOn) {
     CSHigh();
 }
 
-FLASHMEM bool ILI948x_t4_mm::getTearingEffect() {
+FLASHMEM bool ILI948x_t4x_p::getTearingEffect() {
     return _bTearingOn;
 }
 
-FLASHMEM void ILI948x_t4_mm::setTearingScanLine(uint16_t scanLine) {
+FLASHMEM void ILI948x_t4x_p::setTearingScanLine(uint16_t scanLine) {
     _tearingScanLine = scanLine;
 
     uint8_t params[2] = {(uint8_t)(_tearingScanLine << 8), (uint8_t)(_tearingScanLine & 0xFF)};
     SglBeatWR_nPrm_8(ILI9488_TESLWR, params, 2); // Tearing effect write scan line : 0x00 0x00 = line 0 (default), 0x00 0xA0 = line 160, 0x00 0xF0 = line 240
 }
 
-FLASHMEM uint16_t ILI948x_t4_mm::getTearingScanLine() {
+FLASHMEM uint16_t ILI948x_t4x_p::getTearingScanLine() {
     return _tearingScanLine;
 }
 
-FLASHMEM void ILI948x_t4_mm::setRotation(uint8_t r) {
+FLASHMEM void ILI948x_t4x_p::setRotation(uint8_t r) {
     _rotation = r & 3;
 
     switch (_rotation) {
@@ -354,21 +354,21 @@ FLASHMEM void ILI948x_t4_mm::setRotation(uint8_t r) {
     SglBeatWR_nPrm_8(ILI9488_MADCTL, &MADCTL[_rotation], 1);
 }
 
-FLASHMEM void ILI948x_t4_mm::invertDisplay(bool invert) {
+FLASHMEM void ILI948x_t4x_p::invertDisplay(bool invert) {
     SglBeatWR_nPrm_8(invert ? ILI9488_INVON : ILI9488_INVOFF, 0, 0);
 }
 
-void ILI948x_t4_mm::setScroll(uint16_t offset) {
+void ILI948x_t4x_p::setScroll(uint16_t offset) {
     //   SglBeatWR_nPrm_8(ILI9488_VSCRSADD, offset, 1); // Changed, offset is
     SglBeatWR_nPrm_16(ILI9488_VSCRSADD, &offset, 1); // a pointer to a 16 bit value.
 }
 
-FLASHMEM void ILI948x_t4_mm::onCompleteCB(CBF callback) {
+FLASHMEM void ILI948x_t4x_p::onCompleteCB(CBF callback) {
     _callback = callback;
     isCB = true;
 }
 
-FASTRUN void ILI948x_t4_mm::setAddrWindow(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
+FASTRUN void ILI948x_t4x_p::setAddrWindow(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
     uint8_t Command;
     uint8_t CommandValue[4];
 
@@ -387,7 +387,7 @@ FASTRUN void ILI948x_t4_mm::setAddrWindow(uint16_t x1, uint16_t y1, uint16_t x2,
     SglBeatWR_nPrm_8(Command, CommandValue, 4U);
 }
 
-FASTRUN void ILI948x_t4_mm::displayInfo() {
+FASTRUN void ILI948x_t4x_p::displayInfo() {
     CSLow();
     Serial.printf("Manufacturer ID: 0x%02X\n", readCommand(ILI9488_RDID1));
     Serial.printf("Module Version ID: 0x%02X\n", readCommand(ILI9488_RDID2));
@@ -421,7 +421,7 @@ FASTRUN void ILI948x_t4_mm::displayInfo() {
     CSHigh();
 }
 
-FASTRUN void ILI948x_t4_mm::pushPixels16bit(const uint16_t *pcolors, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
+FASTRUN void ILI948x_t4x_p::pushPixels16bit(const uint16_t *pcolors, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
     while (WR_DMATransferDone == false) {
         // Wait for any DMA transfers to complete
     }
@@ -436,7 +436,7 @@ FASTRUN void ILI948x_t4_mm::pushPixels16bit(const uint16_t *pcolors, uint16_t x1
     SglBeatWR_nPrm_16(ILI9488_RAMWR, pcolors, area);
 }
 
-FASTRUN void ILI948x_t4_mm::pushPixels16bitDMA(const uint16_t *pcolors, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
+FASTRUN void ILI948x_t4x_p::pushPixels16bitDMA(const uint16_t *pcolors, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
     while (WR_DMATransferDone == false) {
         // Wait for any DMA transfers to complete
     }
@@ -455,7 +455,7 @@ FASTRUN void ILI948x_t4_mm::pushPixels16bitDMA(const uint16_t *pcolors, uint16_t
 ///////////////////
 // Private functions
 ///////////////////
-FLASHMEM void ILI948x_t4_mm::displayInit(uint8_t disp_name) {
+FLASHMEM void ILI948x_t4x_p::displayInit(uint8_t disp_name) {
     const uint8_t *addr;
     DBGPrintf("displayInit called\n");
     switch (disp_name) {
@@ -537,34 +537,34 @@ FLASHMEM void ILI948x_t4_mm::displayInit(uint8_t disp_name) {
     }
 }
 
-FASTRUN void ILI948x_t4_mm::CSLow() {
+FASTRUN void ILI948x_t4x_p::CSLow() {
     digitalWriteFast(_cs, LOW); // Select TFT
 }
 
-FASTRUN void ILI948x_t4_mm::CSHigh() {
+FASTRUN void ILI948x_t4x_p::CSHigh() {
     digitalWriteFast(_cs, HIGH); // Deselect TFT
 }
 
-FASTRUN void ILI948x_t4_mm::DCLow() {
+FASTRUN void ILI948x_t4x_p::DCLow() {
     digitalWriteFast(_dc, LOW); // Writing command to TFT
 }
 
-FASTRUN void ILI948x_t4_mm::DCHigh() {
+FASTRUN void ILI948x_t4x_p::DCHigh() {
     digitalWriteFast(_dc, HIGH); // Writing data to TFT
 }
 
-FASTRUN void ILI948x_t4_mm::microSecondDelay() {
+FASTRUN void ILI948x_t4x_p::microSecondDelay() {
     for (uint32_t i = 0; i < 99; i++)
         __asm__("nop\n\t");
 }
 
-FASTRUN void ILI948x_t4_mm::gpioWrite() {
+FASTRUN void ILI948x_t4x_p::gpioWrite() {
     pFlex->setIOPinToFlexMode(_wr_pin);
     pinMode(_rd_pin, OUTPUT);
     digitalWriteFast(_rd_pin, HIGH);
 }
 
-FASTRUN void ILI948x_t4_mm::gpioRead() {
+FASTRUN void ILI948x_t4x_p::gpioRead() {
     pFlex->setIOPinToFlexMode(_rd_pin);
     pinMode(_wr_pin, OUTPUT);
     digitalWriteFast(_wr_pin, HIGH);
@@ -573,8 +573,8 @@ FASTRUN void ILI948x_t4_mm::gpioRead() {
 // If used this must be called before begin
 // Set the FlexIO pins.  The first version you can specify just the wr, and read and optionsl first Data.
 // it will use information in the Flexio library to fill in d1-d7
-FASTRUN bool ILI948x_t4_mm::setFlexIOPins(uint8_t write_pin, uint8_t rd_pin, uint8_t tft_d0) {
-    DBGPrintf("ILI948x_t4_mm::setFlexIOPins(%u, %u, %u) %u %u %u\n", write_pin, rd_pin, tft_d0, _data_pins[0], _wr_pin, _rd_pin);
+FASTRUN bool ILI948x_t4x_p::setFlexIOPins(uint8_t write_pin, uint8_t rd_pin, uint8_t tft_d0) {
+    DBGPrintf("ILI948x_t4x_p::setFlexIOPins(%u, %u, %u) %u %u %u\n", write_pin, rd_pin, tft_d0, _data_pins[0], _wr_pin, _rd_pin);
     DBGFlush();
     if (tft_d0 != 0xff) {
 #ifdef FLEX_IO_HAS_FULL_PIN_MAPPING
@@ -613,7 +613,7 @@ FASTRUN bool ILI948x_t4_mm::setFlexIOPins(uint8_t write_pin, uint8_t rd_pin, uin
 }
 
 // Set the FlexIO pins.  Specify all of the pins for 8 bit mode. Must be called before begin
-FLASHMEM bool ILI948x_t4_mm::setFlexIOPins(uint8_t write_pin, uint8_t rd_pin, uint8_t d0, uint8_t d1, uint8_t d2, uint8_t d3,
+FLASHMEM bool ILI948x_t4x_p::setFlexIOPins(uint8_t write_pin, uint8_t rd_pin, uint8_t d0, uint8_t d1, uint8_t d2, uint8_t d3,
                                            uint8_t d4, uint8_t d5, uint8_t d6, uint8_t d7) {
 
     _data_pins[0] = d0;
@@ -634,7 +634,7 @@ FLASHMEM bool ILI948x_t4_mm::setFlexIOPins(uint8_t write_pin, uint8_t rd_pin, ui
     return true;
 }
 
-FASTRUN void ILI948x_t4_mm::FlexIO_Init() {
+FASTRUN void ILI948x_t4x_p::FlexIO_Init() {
     /* Get a FlexIO channel */
     // lets assume D0 is the valid one...
     DBGPrintf("FlexIO_Init: D0:%u WR:%u RD:%u\n", _data_pins[0], _wr_pin, _rd_pin);
@@ -652,7 +652,7 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Init() {
     for (uint8_t i = 1; i < 8; i++) {
         uint8_t flexio_pin = pFlex->mapIOPinToFlexPin(_data_pins[i]);
         if (flexio_pin != (_flexio_D0 + i)) {
-            Serial.printf("ILI948x_t4_mm::FlexIO_Ini - Flex IO Data pins pin issue D0(%u), D%u(%u)\n", _flexio_D0, i, flexio_pin);
+            Serial.printf("ILI948x_t4x_p::FlexIO_Ini - Flex IO Data pins pin issue D0(%u), D%u(%u)\n", _flexio_D0, i, flexio_pin);
         }
     }
 
@@ -665,7 +665,7 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Init() {
     } else if (pFlex->claimShifter(4)) {
         _write_shifter = 4;
     } else {
-        Serial.println("ILI948x_t4_mm::FlexIO_Init could not claim write Shifter(0 or 4");
+        Serial.println("ILI948x_t4x_p::FlexIO_Init could not claim write Shifter(0 or 4");
     }
 
     // Maybe this is optional
@@ -674,7 +674,7 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Init() {
     } else if (pFlex->claimShifter(7)) {
         _read_shifter = 7;
     } else {
-        Serial.println("ILI948x_t4_mm::FlexIO_Init could not claim Read Shifter(3 or 7");
+        Serial.println("ILI948x_t4x_p::FlexIO_Init could not claim Read Shifter(3 or 7");
     }
     _write_shifter_mask = 1 << _write_shifter;
     _read_shifter_mask = 1 << _read_shifter;
@@ -685,7 +685,7 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Init() {
     _flexio_RD = pFlex->mapIOPinToFlexPin(_rd_pin);
 
     if ((_flexio_WR == 0xff) || (_flexio_RD == 0xff)) {
-        Serial.printf("ILI948x_t4_mm::FlexIO_Ini - RD/WR pin issue: WR:%u(%u) RD:%u(%u)\n", _wr_pin, _flexio_WR, _rd_pin, _flexio_RD);
+        Serial.printf("ILI948x_t4x_p::FlexIO_Ini - RD/WR pin issue: WR:%u(%u) RD:%u(%u)\n", _wr_pin, _flexio_WR, _rd_pin, _flexio_RD);
     }
 
     DBGPrintf("FlexIO pin mappings: D0(%u)=%u  WR(%u)=%u RD(%u)=%u\n)", _data_pins[0], _flexio_D0, _wr_pin, _flexio_WR, _rd_pin, _flexio_RD);
@@ -739,12 +739,12 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Init() {
     DBGPrintf("*** flexio_init completed ***\n");
 }
 
-FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat_Read() {
+FASTRUN void ILI948x_t4x_p::FlexIO_Config_SnglBeat_Read() {
 
     if (flex_config == CONFIG_SNGLREAD)
         return;
     flex_config = CONFIG_SNGLREAD;
-    DBGPrintf("ILI948x_t4_mm::FlexIO_Config_SnglBeat_Read - Enter\n");
+    DBGPrintf("ILI948x_t4x_p::FlexIO_Config_SnglBeat_Read - Enter\n");
     p->CTRL &= ~FLEXIO_CTRL_FLEXEN;
     // p->CTRL |= FLEXIO_CTRL_SWRST;
     p->CTRL &= ~FLEXIO_CTRL_SWRST;
@@ -791,10 +791,10 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat_Read() {
 
     /* Enable FlexIO */
     p->CTRL |= FLEXIO_CTRL_FLEXEN;
-    DBGPrintf("ILI948x_t4_mm::FlexIO_Config_SnglBeat_Read - Exit\n");
+    DBGPrintf("ILI948x_t4x_p::FlexIO_Config_SnglBeat_Read - Exit\n");
 }
 
-FASTRUN uint8_t ILI948x_t4_mm::readCommand(uint8_t const cmd) {
+FASTRUN uint8_t ILI948x_t4x_p::readCommand(uint8_t const cmd) {
     while (WR_DMATransferDone == false) {
         // Wait for any DMA transfers to complete
     }
@@ -832,7 +832,7 @@ FASTRUN uint8_t ILI948x_t4_mm::readCommand(uint8_t const cmd) {
 };
 
 // Note we could combine the above with thsi.
-FASTRUN uint32_t ILI948x_t4_mm::readCommandN(uint8_t const cmd, uint8_t count_bytes) {
+FASTRUN uint32_t ILI948x_t4x_p::readCommandN(uint8_t const cmd, uint8_t count_bytes) {
     while (WR_DMATransferDone == false) {
         // Wait for any DMA transfers to complete
     }
@@ -896,7 +896,7 @@ void print_flexio_debug_data(FlexIOHandler *pFlex, uint8_t flexio_timer, uint8_t
     Serial.printf("TIMCMP:%x %x %x %x\n", p->TIMCMP[0], p->TIMCMP[1], p->TIMCMP[2], p->TIMCMP[3]);
 }
 
-FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat() {
+FASTRUN void ILI948x_t4x_p::FlexIO_Config_SnglBeat() {
 
     if (flex_config == CONFIG_SNGLBEAT)
         return;
@@ -959,10 +959,10 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_SnglBeat() {
     p->CTRL |= FLEXIO_CTRL_FLEXEN;
 }
 
-FASTRUN void ILI948x_t4_mm::FlexIO_Clear_Config_SnglBeat() {
+FASTRUN void ILI948x_t4x_p::FlexIO_Clear_Config_SnglBeat() {
     if (flex_config == CONFIG_CLEAR)
         return;
-    DBGPrintf("ILI948x_t4_mm::FlexIO_Clear_Config_SnglBeat() - Enter\n");
+    DBGPrintf("ILI948x_t4x_p::FlexIO_Clear_Config_SnglBeat() - Enter\n");
     flex_config = CONFIG_CLEAR;
 
     p->CTRL &= ~FLEXIO_CTRL_FLEXEN;
@@ -979,14 +979,14 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Clear_Config_SnglBeat() {
 
     /* Enable FlexIO */
     p->CTRL |= FLEXIO_CTRL_FLEXEN;
-    DBGPrintf("ILI948x_t4_mm::FlexIO_Clear_Config_SnglBeat() - Exit\n");
+    DBGPrintf("ILI948x_t4x_p::FlexIO_Clear_Config_SnglBeat() - Exit\n");
 }
 
-FASTRUN void ILI948x_t4_mm::FlexIO_Config_MultiBeat() {
+FASTRUN void ILI948x_t4x_p::FlexIO_Config_MultiBeat() {
     if (flex_config == CONFIG_MULTIBEAT)
         return;
     flex_config = CONFIG_MULTIBEAT;
-    DBGPrintf("ILI948x_t4_mm::FlexIO_Config_MultiBeat() - Enter\n");
+    DBGPrintf("ILI948x_t4x_p::FlexIO_Config_MultiBeat() - Enter\n");
 
     uint32_t i;
     uint8_t MulBeatWR_BeatQty = SHIFTNUM * sizeof(uint32_t) / sizeof(uint8_t); // Number of beats = number of shifters * beats per shifter
@@ -1066,11 +1066,11 @@ FASTRUN void ILI948x_t4_mm::FlexIO_Config_MultiBeat() {
     /* Enable FlexIO */
     p->CTRL |= FLEXIO_CTRL_FLEXEN;
     p->SHIFTSDEN |= 1U << (SHIFTER_DMA_REQUEST); // enable DMA trigger when shifter status flag is set on shifter SHIFTER_DMA_REQUEST
-    DBGPrintf("ILI948x_t4_mm::FlexIO_Config_MultiBeat() - Exit\n");
+    DBGPrintf("ILI948x_t4x_p::FlexIO_Config_MultiBeat() - Exit\n");
 }
 
-FASTRUN void ILI948x_t4_mm::SglBeatWR_nPrm_8(uint32_t const cmd, const uint8_t *value = NULL, uint32_t const length = 0) {
-    DBGPrintf("ILI948x_t4_mm::SglBeatWR_nPrm_8(%x, %x, %u\n", cmd, value, length);
+FASTRUN void ILI948x_t4x_p::SglBeatWR_nPrm_8(uint32_t const cmd, const uint8_t *value = NULL, uint32_t const length = 0) {
+    DBGPrintf("ILI948x_t4x_p::SglBeatWR_nPrm_8(%x, %x, %u\n", cmd, value, length);
     while (WR_DMATransferDone == false) {
         // Wait for any DMA transfers to complete
     }
@@ -1108,8 +1108,8 @@ FASTRUN void ILI948x_t4_mm::SglBeatWR_nPrm_8(uint32_t const cmd, const uint8_t *
     /* De-assert CS pin */
 }
 
-FASTRUN void ILI948x_t4_mm::SglBeatWR_nPrm_16(uint32_t const cmd, const uint16_t *value, uint32_t const length) {
-    DBGPrintf("ILI948x_t4_mm::SglBeatWR_nPrm_16(%x, %x, %u\n", cmd, value, length);
+FASTRUN void ILI948x_t4x_p::SglBeatWR_nPrm_16(uint32_t const cmd, const uint16_t *value, uint32_t const length) {
+    DBGPrintf("ILI948x_t4x_p::SglBeatWR_nPrm_16(%x, %x, %u\n", cmd, value, length);
     while (WR_DMATransferDone == false) {
         // Wait for any DMA transfers to complete
     }
@@ -1157,11 +1157,11 @@ FASTRUN void ILI948x_t4_mm::SglBeatWR_nPrm_16(uint32_t const cmd, const uint16_t
     CSHigh();
 }
 
-ILI948x_t4_mm *ILI948x_t4_mm::dmaCallback = nullptr;
-DMAChannel ILI948x_t4_mm::flexDma;
+ILI948x_t4x_p *ILI948x_t4x_p::dmaCallback = nullptr;
+DMAChannel ILI948x_t4x_p::flexDma;
 
-FASTRUN void ILI948x_t4_mm::MulBeatWR_nPrm_DMA(uint32_t const cmd, const void *value, uint32_t const length) {
-    Serial.printf("ILI948x_t4_mm::MulBeatWR_nPrm_DMA(%x, %x, %u\n", cmd, value, length);
+FASTRUN void ILI948x_t4x_p::MulBeatWR_nPrm_DMA(uint32_t const cmd, const void *value, uint32_t const length) {
+    Serial.printf("ILI948x_t4x_p::MulBeatWR_nPrm_DMA(%x, %x, %u\n", cmd, value, length);
     while (WR_DMATransferDone == false) {
         // Wait for any DMA transfers to complete
     }
@@ -1268,20 +1268,20 @@ FASTRUN void ILI948x_t4_mm::MulBeatWR_nPrm_DMA(uint32_t const cmd, const void *v
     }
 }
 
-FASTRUN void ILI948x_t4_mm::_onCompleteCB() {
+FASTRUN void ILI948x_t4x_p::_onCompleteCB() {
     if (_callback) {
         _callback();
     }
     return;
 }
 
-FASTRUN void ILI948x_t4_mm::dmaISR() {
+FASTRUN void ILI948x_t4x_p::dmaISR() {
     flexDma.clearInterrupt();
     asm volatile("dsb"); // prevent interrupt from re-entering
     dmaCallback->flexDma_Callback();
 }
 
-FASTRUN void ILI948x_t4_mm::flexDma_Callback() {
+FASTRUN void ILI948x_t4x_p::flexDma_Callback() {
     // Serial.printf("DMA callback start triggred \n");
 
     /* the interrupt is called when the final DMA transfer completes writing to the shifter buffers, which would generally happen while
@@ -1360,18 +1360,18 @@ FASTRUN void ILI948x_t4_mm::flexDma_Callback() {
     // Serial.printf("DMA callback end triggred \n");
 }
 
-void ILI948x_t4_mm::DMAerror() {
+void ILI948x_t4x_p::DMAerror() {
     if (flexDma.error()) {
         Serial.print("DMA error: ");
         Serial.println(DMA_ES, HEX);
     }
 }
 
-void ILI948x_t4_mm::beginWrite16BitColors() {
+void ILI948x_t4x_p::beginWrite16BitColors() {
     while (WR_DMATransferDone == false) {
         // Wait for any DMA transfers to complete
     }
-    DBGPrintf("ILI948x_t4_mm::beginWrite16BitColors() - 0x2c\n");
+    DBGPrintf("ILI948x_t4x_p::beginWrite16BitColors() - 0x2c\n");
     FlexIO_Config_SnglBeat();
     /* Assert CS, RS pins */
     CSLow();
@@ -1389,7 +1389,7 @@ void ILI948x_t4_mm::beginWrite16BitColors() {
     microSecondDelay();
 }
 
-void ILI948x_t4_mm::write16BitColor(uint16_t color) {
+void ILI948x_t4x_p::write16BitColor(uint16_t color) {
     waitWriteShiftStat(__LINE__);
     p->SHIFTBUF[_write_shifter] = color >> 8;
 
@@ -1397,7 +1397,7 @@ void ILI948x_t4_mm::write16BitColor(uint16_t color) {
     p->SHIFTBUF[_write_shifter] = color & 0xFF;
 }
 
-void ILI948x_t4_mm::endWrite16BitColors() {
+void ILI948x_t4x_p::endWrite16BitColors() {
     /*Wait for transfer to be completed */
     while (0 == (p->TIMSTAT |= (1U << 0))) {
     }
@@ -1405,7 +1405,7 @@ void ILI948x_t4_mm::endWrite16BitColors() {
     CSHigh();
 }
 
-FASTRUN void ILI948x_t4_mm::write16BitColor(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint16_t *pcolors, uint16_t count) {
+FASTRUN void ILI948x_t4x_p::write16BitColor(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint16_t *pcolors, uint16_t count) {
     while (WR_DMATransferDone == false) {
         // Wait for any DMA transfers to complete
     }
@@ -1419,7 +1419,7 @@ FASTRUN void ILI948x_t4_mm::write16BitColor(uint16_t x1, uint16_t y1, uint16_t x
     SglBeatWR_nPrm_16(ILI9488_RAMWR, pcolors, area);
 }
 
-void ILI948x_t4_mm::readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *pcolors) {
+void ILI948x_t4x_p::readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *pcolors) {
     DBGPrintf("readRectFlexIO(%d, %d, %d, %d, %p)\n", x, y, w, h, pcolors);
     //  first do any clipping.
     if ((x >= _displayclipx2) || (y >= _displayclipy2))

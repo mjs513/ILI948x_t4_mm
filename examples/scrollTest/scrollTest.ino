@@ -16,12 +16,12 @@
 
 #include <Teensy_Parallel_GFX.h>
 #include <Adafruit_GFX.h>  // Core graphics library
-#include "ILI948x_t4_mm.h"
+#include "ILI948x_t4x_p.h"
 #include <ILI9488_t3_font_ComicSansMS.h>
 
 //#define TEENSY64
 
-ILI948x_t4_mm tft = ILI948x_t4_mm(13, 11, 7);  //(dc, cs, rst, rd)
+ILI948x_t4x_p tft = ILI948x_t4x_p(13, 11, 7);  //(dc, cs, rst, rd)
 
 void setup() {
 

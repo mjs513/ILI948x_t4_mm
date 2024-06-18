@@ -1,6 +1,6 @@
-#include "ILI948x_t4_mm.h"
+#include "ILI948x_t4x_p.h"
 #include "flexio_teensy_mm.c"
-ILI948x_t4_mm lcd = ILI948x_t4_mm(13,11,7); //(dc, cs, rst)
+ILI948x_t4x_p lcd = ILI948x_t4x_p(13,11,7); //(dc, cs, rst)
 
 void setup() {
   Serial.begin(115200);

@@ -15,11 +15,11 @@ BC_DATUM = Bottom centre
 BR_DATUM = Bottom right
 */
 #include <Teensy_Parallel_GFX.h>
-#include "ILI948x_t4_mm.h"
+#include "ILI948x_t4x_p.h"
 #include <SPI.h>
 #include <ili9488_t3_font_Arial.h>
 
-ILI948x_t4_mm tft = ILI948x_t4_mm(13,11,7); //(dc, cs, rst, rd)
+ILI948x_t4x_p tft = ILI948x_t4x_p(13,11,7); //(dc, cs, rst, rd)
 
 unsigned long drawTime = 0;
 

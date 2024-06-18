@@ -16,7 +16,7 @@
 
 #include <Teensy_Parallel_GFX.h>
 #include <Adafruit_GFX.h>  // Core graphics library
-#include "ILI948x_t4_mm.h"
+#include "ILI948x_t4x_p.h"
 #include "font_Arial.h"
 #include "font_ArialBold.h"
 #include <Fonts/FreeMonoBoldOblique12pt7b.h>
@@ -42,9 +42,9 @@ uint8_t use_fb = 0;
 #define ORIGIN_TEST_Y 50
 
 #ifdef ARDUINO_TEENSY41
-ILI948x_t4_mm tft = ILI948x_t4_mm(10, 8, 9);  //(dc, cs, rst)
+ILI948x_t4x_p tft = ILI948x_t4x_p(10, 8, 9);  //(dc, cs, rst)
 #else
-ILI948x_t4_mm tft = ILI948x_t4_mm(13, 11, 5);  //(dc, cs, rst)
+ILI948x_t4x_p tft = ILI948x_t4x_p(13, 11, 5);  //(dc, cs, rst)
 #endif
 
 void setup() {
