@@ -194,9 +194,9 @@ FLASHMEM void ILI948x_t4x_p::begin(uint8_t display_name, uint8_t buad_div) {
     FlexIO_Init();
 
     displayInit(display_name);
-    /*
-    setBitDepth(_bitDepth);
 
+    setBitDepth(_bitDepth);
+    /*
     setTearingEffect(_bTearingOn);
     if (_bTearingOn == true) {
       setTearingScanLine(_tearingScanLine);
