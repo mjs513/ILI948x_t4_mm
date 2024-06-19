@@ -822,7 +822,7 @@ FASTRUN uint8_t ILI948x_t4x_p::readCommand(uint8_t const cmd) {
     FlexIO_Clear_Config_SnglBeat();
     FlexIO_Config_SnglBeat_Read();
 
-    uint8_t dummy = 0;
+    uint8_t dummy __attribute__((unused)) = 0;
     uint8_t data = 0;
 
     waitReadShiftStat(__LINE__);
@@ -866,7 +866,7 @@ FASTRUN uint32_t ILI948x_t4x_p::readCommandN(uint8_t const cmd, uint8_t count_by
     FlexIO_Clear_Config_SnglBeat();
     FlexIO_Config_SnglBeat_Read();
 
-    uint8_t dummy = 0;
+    uint8_t __attribute__((unused)) dummy = 0;
     uint32_t data = 0;
 
     waitReadShiftStat(__LINE__);
@@ -1038,6 +1038,9 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Config_MultiBeat() {
             | FLEXIO_SHIFTCTL_PINSEL(_flexio_D0)  /* Shifter's pin start index */
             | FLEXIO_SHIFTCTL_PINPOL * (0U)       /* Shifter's pin active high */
             | FLEXIO_SHIFTCTL_SMOD(2U);           /* shifter mode transmit */
+
+        //p->SHIFTSTAT = 1 << (_write_shifter + i); // clear out any previous state
+        p->SHIFTERR = 1 << (_write_shifter + i); // clear out any previous state
     }
 
     /* Configure the timer for shift clock */
@@ -1061,6 +1064,8 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Config_MultiBeat() {
         | FLEXIO_TIMCTL_PINSEL(_flexio_WR)               /* Timer' pin index: WR pin */
         | FLEXIO_TIMCTL_PINPOL * (1U)                    /* Timer' pin active low */
         | FLEXIO_TIMCTL_TIMOD(1U);                       /* Timer mode 8-bit baud counter */
+
+    print_flexio_debug_data(pFlex, _flexio_timer, _write_shifter, _read_shifter);
 
     /*
       Serial.printf("CCM_CDCDR: %x\n", CCM_CDCDR);
@@ -1483,7 +1488,7 @@ void ILI948x_t4x_p::readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, u
     DBGPrintf("\tcall FlexIO_Config_SnglBeat_Read\n");
     FlexIO_Config_SnglBeat_Read();
 
-    uint8_t dummy = 0;
+    uint8_t dummy __attribute__((unused)) = 0;
 #define DUMMY_COUNT 1
     for (uint8_t i = 0; i < DUMMY_COUNT; i++) {
         // read in dummy bytes
@@ -1531,4 +1536,22 @@ void ILI948x_t4x_p::readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, u
     microSecondDelay();
     // Set FlexIO back to Write mode
     FlexIO_Config_SnglBeat();
+}
+
+    // Called by GFX to do updateScreenAsync and new writeRectAsync(;
+bool ILI948x_t4x_p::writeRectAsyncFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *pcolors)
+{
+    // Start off only supporting shifters with DMA Requests
+    if (hw->shifters_dma_channel[SHIFTER_DMA_REQUEST] == 0xff) return false;
+
+    pushPixels16bitDMA(pcolors, x, y, x+w-1, y + h - 1);
+    return true;
+}
+
+
+bool ILI948x_t4x_p::writeRectAsyncActiveFlexIO() { 
+    // return the state of last transfer
+    // may depend on if the FlexIO shifter supports DMA or not on how
+    // we implement this.
+    return WR_DMATransferDone; 
 }

@@ -56,10 +56,11 @@ uint8_t use_fb = 0;
 #ifdef ARDUINO_TEENSY41
 ILI948x_t4x_p tft = ILI948x_t4x_p(10, 8, 9);  //(dc, cs, rst)
 #else
-ILI948x_t4x_p tft = ILI948x_t4x_p(13, 11, 5);  //(dc, cs, rst)
+ILI948x_t4x_p tft = ILI948x_t4x_p(4, 5, 3);  //(dc, cs, rst)
 #endif
 
 void setup() {
+    pinMode(2, OUTPUT);
     while (!Serial && (millis() < 4000))
         ;
     Serial.begin(115200);
@@ -531,11 +532,11 @@ void drawTestScreen() {
     tft.println("MonoBold");
 
 
-    //if (use_dma) {
-    //    tft.updateScreenAsync();
-    //} else {
-    tft.updateScreen();
-    //}
+    if (use_dma) {
+        tft.updateScreenAsync();
+    } else {
+        tft.updateScreen();
+    }
 
     Serial.println(millis() - start_time, DEC);
 

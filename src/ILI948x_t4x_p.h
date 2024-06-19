@@ -166,6 +166,10 @@ class ILI948x_t4x_p : public Teensy_Parallel_GFX {
     // Added functions to read pixel data...
     // uint16_t readPixel(int16_t x, int16_t y);
     void readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *pcolors);
+    
+    // Called by GFX to do updateScreenAsync and new writeRectAsync(;
+    bool writeRectAsyncFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *pcolors);
+    bool writeRectAsyncActiveFlexIO();
 
     // void pushPixels16bitTearing(uint16_t * pcolors, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2 );
     // void pushPixels24bitTearing(uint16_t * pcolors, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2 );
