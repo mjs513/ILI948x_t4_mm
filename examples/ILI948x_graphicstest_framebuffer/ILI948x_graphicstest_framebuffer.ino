@@ -14,9 +14,10 @@ ILI948x_t4x_p lcd = ILI948x_t4x_p(4, 5, 3);  //(dc, cs, rst)
 
 void setup() {
   Serial.begin(115200);
+  while (!Serial && millis() < 5000)  {};
   delay(1000);
-  Serial.print(CrashReport);
-  
+  if (CrashReport)Serial.print(CrashReport);
+  Serial.println("Graphic Test - with frame buffer");
   /*
    * begin(Dispalay type, baud)
    * Display type is associated with the the diplay
@@ -38,7 +39,6 @@ void setup() {
 
   Serial.print(F("Text                     "));
   Serial.println(testText());
-  lcd.updateScreen();
   delay(600);
   
   Serial.print(F("Screen fill              "));
@@ -47,7 +47,6 @@ void setup() {
 
   Serial.print(F("Lines                    "));
   Serial.println(testLines(ILI9488_CYAN));
-  lcd.updateScreen();
   delay(1000);
 
   Serial.print(F("Horiz/Vert Lines         "));
@@ -131,6 +130,7 @@ unsigned long testText() {
   lcd.println("in the gobberwarts");
   lcd.println("with my blurglecruncheon,");
   lcd.println("see if I don't!");
+  lcd.updateScreen();
   return micros() - start;
 }
 
@@ -139,7 +139,6 @@ unsigned long testFillScreen() {
   lcd.fillScreen(ILI9488_BLACK);
   lcd.updateScreen();
   lcd.fillScreen(ILI9488_RED);
-  lcd.updateScreen();
   lcd.updateScreen();
   lcd.fillScreen(ILI9488_GREEN);
   lcd.updateScreen();
@@ -202,9 +201,11 @@ unsigned long testLines(uint16_t color) {
   for(x2=0; x2<w; x2+=6) lcd.drawLine(x1, y1, x2, y2, color);
   x2    = 0;
   for(y2=0; y2<h; y2+=6) lcd.drawLine(x1, y1, x2, y2, color);
+  lcd.updateScreen();
+  t    += micros() - start;
   //lcd.updateScreen();
 
-  return micros() - start;
+  return t;
 }
 
 

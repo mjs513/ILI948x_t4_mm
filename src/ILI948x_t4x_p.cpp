@@ -991,7 +991,7 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Clear_Config_SnglBeat() {
     p->SHIFTSTAT = _write_shifter_mask;
     p->TIMCMP[_flexio_timer] = 0;
     p->TIMCFG[_flexio_timer] = 0;
-    p->TIMSTAT = (1U << 0); /* Timer start bit disabled */
+    p->TIMSTAT = _flexio_timer_mask; /* Timer start bit disabled */
     p->TIMCTL[_flexio_timer] = 0;
 
     /* Enable FlexIO */
@@ -1167,17 +1167,30 @@ FASTRUN void ILI948x_t4x_p::SglBeatWR_nPrm_16(uint32_t const cmd, const uint16_t
         p->SHIFTBUF[_write_shifter] = buf >> 8;
 
         waitWriteShiftStat(__LINE__);
-        p->TIMSTAT |= (1U << 0);
+        p->TIMSTAT |= _flexio_timer_mask;
 
         p->SHIFTBUF[_write_shifter] = buf & 0xFF;
 
         /*Wait for transfer to be completed */
-        while (0 == (p->TIMSTAT |= (1U << 0))) {
-        }
+        waitTimStat();
     }
     microSecondDelay();
     CSHigh();
 }
+
+void dumpDMA_TCD(DMABaseClass *dmabc, const char *psz_title) {
+  if (psz_title)
+    Serial.print(psz_title);
+  Serial.printf("%x %x:", (uint32_t)dmabc, (uint32_t)dmabc->TCD);
+
+  Serial.printf(
+      "SA:%x SO:%d AT:%x NB:%x SL:%d DA:%x DO: %d CI:%x DL:%x CS:%x BI:%x\n",
+      (uint32_t)dmabc->TCD->SADDR, dmabc->TCD->SOFF, dmabc->TCD->ATTR,
+      dmabc->TCD->NBYTES, dmabc->TCD->SLAST, (uint32_t)dmabc->TCD->DADDR,
+      dmabc->TCD->DOFF, dmabc->TCD->CITER, dmabc->TCD->DLASTSGA,
+      dmabc->TCD->CSR, dmabc->TCD->BITER);
+}
+
 
 ILI948x_t4x_p *ILI948x_t4x_p::dmaCallback = nullptr;
 DMAChannel ILI948x_t4x_p::flexDma;
@@ -1219,7 +1232,7 @@ FASTRUN void ILI948x_t4x_p::MulBeatWR_nPrm_DMA(uint32_t const cmd, const void *v
             p->SHIFTBUF[_write_shifter] = buf & 0xFF;
         }
         // Wait for transfer to be completed
-        while (0 == (p->TIMSTAT & (1U << 0))) {
+        while (0 == (p->TIMSTAT & _flexio_timer_mask)) {
         }
 
         microSecondDelay();
@@ -1284,6 +1297,9 @@ FASTRUN void ILI948x_t4x_p::MulBeatWR_nPrm_DMA(uint32_t const cmd, const void *v
         /* Start data transfer by using DMA */
         WR_DMATransferDone = false;
         flexDma.attachInterrupt(dmaISR);
+
+        dumpDMA_TCD(&flexDma, "ILI948x_t4x_p)\n");
+
         flexDma.enable();
         // Serial.println("Starting transfer");
         dmaCallback = this;
@@ -1343,26 +1359,25 @@ FASTRUN void ILI948x_t4x_p::flexDma_Callback() {
             waitWriteShiftStat(__LINE__);
             p->SHIFTBUF[_write_shifter] = value & 0xFF;
         }
-        p->TIMSTAT |= (1U << 0);
+        p->TIMSTAT |= _flexio_timer_mask;
         /*
         value = *MulBeatDataRemain++;
         //Write the last byte
 
-        while(0 == (p->SHIFTSTAT & (1U << 0)))
+        while(0 == (p->SHIFTSTAT & _flexio_timer_mask))
             {
             }
         p->SHIFTBUF[_write_shifter] = value >> 8;
 
-        while(0 == (p->SHIFTSTAT & (1U << 0)))
+        while(0 == (p->SHIFTSTAT & _flexio_timer_mask))
         {
         }
-        p->TIMSTAT |= (1U << 0);
+        p->TIMSTAT |= _flexio_timer_mask;
 
         p->SHIFTBUF[_write_shifter] = value & 0xFF;
         */
         /*Wait for transfer to be completed */
-        while (0 == (p->TIMSTAT |= (1U << 0))) {
-        }
+        waitTimStat();
         // Serial.println("Finished single beat completion");
     }
 
@@ -1421,8 +1436,7 @@ void ILI948x_t4x_p::write16BitColor(uint16_t color) {
 
 void ILI948x_t4x_p::endWrite16BitColors() {
     /*Wait for transfer to be completed */
-    while (0 == (p->TIMSTAT |= (1U << 0))) {
-    }
+    waitTimStat();
     microSecondDelay();
     CSHigh();
 }
@@ -1439,6 +1453,49 @@ FASTRUN void ILI948x_t4x_p::write16BitColor(uint16_t x1, uint16_t y1, uint16_t x
     // }
     setAddr(x1, y1, x2, y2);
     SglBeatWR_nPrm_16(ILI9488_RAMWR, pcolors, area);
+}
+
+void ILI948x_t4x_p::fillRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
+    uint32_t length = w * h;
+    // bail if nothing to do
+    if (length == 0) return;
+    setAddr(x, y, x + w - 1, y + h -1);
+
+    FlexIO_Config_SnglBeat();
+    /* Assert CS, RS pins */
+    CSLow();
+    DCLow();
+    // microSecondDelay();
+
+    /* Write command index */
+    p->SHIFTBUF[_write_shifter] = ILI9488_RAMWR;
+
+    /*Wait for transfer to be completed */
+    waitTimStat(__LINE__);
+    microSecondDelay();
+    /* De-assert RS pin */
+    DCHigh();
+    microSecondDelay();
+    while (length-- > 1) {
+        waitWriteShiftStat(__LINE__);
+        p->SHIFTBUF[_write_shifter] = color >> 8;
+
+        waitWriteShiftStat(__LINE__);
+        p->SHIFTBUF[_write_shifter] = color & 0xFF;
+    }
+    /* Write the last pixel */
+    waitWriteShiftStat(__LINE__);
+    p->SHIFTBUF[_write_shifter] = color >> 8;
+
+    waitWriteShiftStat(__LINE__);
+    p->TIMSTAT |= _flexio_timer_mask;
+
+    p->SHIFTBUF[_write_shifter] = color & 0xFF;
+
+    /*Wait for transfer to be completed */
+    waitTimStat(__LINE__);
+    microSecondDelay();
+    CSHigh();
 }
 
 void ILI948x_t4x_p::readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *pcolors) {

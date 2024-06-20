@@ -17,7 +17,7 @@
 // easier for testing
 #ifdef ARDUINO_TEENSY_MICROMOD
 #define ILI948X ILI9486
-#define ILI948X_SPEED_MHX 24
+#define ILI948X_SPEED_MHX 16
 #elif defined(ARDUINO_TEENSY41)
 #define ILI948X ILI9488
 #define ILI948X_SPEED_MHX 24
@@ -558,14 +558,12 @@ void fillScreenTest() {
     tft.fillScreen(ILI9488_BLACK);
 }
 void printTextSizes(const char *sz) {
-#if 0    
   Serial.printf("%s(%d,%d): SPL:%u ", sz, tft.getCursorX(), tft.getCursorY(), tft.strPixelLen(sz));
   int16_t x, y;
   uint16_t w, h;
   tft.getTextBounds(sz, tft.getCursorX(), tft.getCursorY(), &x, &y, &w, &h);
   Serial.printf(" Rect(%d, %d, %u %u)\n", x, y, w, h);  
   tft.drawRect(x, y, w, h, ILI9488_GREEN);
-#endif
 }
 
 
@@ -583,7 +581,7 @@ void drawTextScreen(bool fOpaque) {
         tft.setTextColor(ILI9488_WHITE);
     tft.setCursor(0, 5);
     tft.println("AbCdEfGhIj");
-#if 0
+#if 1
   tft.setFont(Arial_28_Bold);
   tft.println("0123456789!@#$");
   tft.setFont(Arial_20_Bold);
