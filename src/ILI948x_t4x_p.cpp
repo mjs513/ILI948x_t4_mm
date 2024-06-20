@@ -1600,7 +1600,8 @@ bool ILI948x_t4x_p::writeRectAsyncFlexIO(int16_t x, int16_t y, int16_t w, int16_
     // Start off only supporting shifters with DMA Requests
     if (hw->shifters_dma_channel[SHIFTER_DMA_REQUEST] == 0xff) return false;
 
-    pushPixels16bitDMA(pcolors, x, y, x+w-1, y + h - 1);
+    setAddr(x, y, w+w-1, y+h-1);
+    MulBeatWR_nPrm_DMA(ILI9488_RAMWR, pcolors, w*h);
     return true;
 }
 
