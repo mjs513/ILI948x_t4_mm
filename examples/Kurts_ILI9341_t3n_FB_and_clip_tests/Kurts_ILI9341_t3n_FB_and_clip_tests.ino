@@ -15,7 +15,11 @@
 // Set which Display we are using and at what speed
 // Currently I have options for both MICROMOD and T42 to make it
 // easier for testing
-#ifdef ARDUINO_TEENSY_MICROMOD
+
+#if defined(ARDUINO_TEENSY_DEVBRD4)
+#define ILI948X ILI9488
+#define ILI948X_SPEED_MHX 12
+#elif defined(ARDUINO_TEENSY_MICROMOD)
 #define ILI948X ILI9486
 #define ILI948X_SPEED_MHX 16
 #elif defined(ARDUINO_TEENSY41)
@@ -55,6 +59,8 @@ uint8_t use_fb = 0;
 
 #ifdef ARDUINO_TEENSY41
 ILI948x_t4x_p tft = ILI948x_t4x_p(10, 8, 9);  //(dc, cs, rst)
+#elif defined(ARDUINO_TEENSY_DEVBRD4)
+ILI948x_t4x_p tft = ILI948x_t4x_p(10, 11, 12);  //(dc, cs, rst)
 #else
 ILI948x_t4x_p tft = ILI948x_t4x_p(4, 5, 3);  //(dc, cs, rst)
 #endif
@@ -76,7 +82,7 @@ void setup() {
     digitalWrite(TFT_TOUCH_CS, HIGH);
 #endif
 
-    /*
+/*
    * begin(Dispalay type, baud)
    * Display type is associated with the the diplay
    * init configurations:
@@ -85,12 +91,22 @@ void setup() {
    * begin defaults to ILI9488 and 20Mhz:
    *     lcd.begin();
   */
-    // Begin optionally change FlexIO pins.
-    //    WRITE, READ, D0, [D1 - D7]
-    //    tft.setFlexIOPins(7, 8);
-    //    tft.setFlexIOPins(7, 8, 40);
-    //    tft.setFlexIOPins(7, 8, 40, 41, 42, 43, 44, 45, 6, 9);
-    //tft.setFlexIOPins(7, 8);
+// Begin optionally change FlexIO pins.
+//    WRITE, READ, D0, [D1 - D7]
+//    tft.setFlexIOPins(7, 8);
+//    tft.setFlexIOPins(7, 8, 40);
+//    tft.setFlexIOPins(7, 8, 40, 41, 42, 43, 44, 45, 6, 9);
+//tft.setFlexIOPins(7, 8);
+#if defined(ARDUINO_TEENSY_DEVBRD4)
+    Serial.print("DEVBRD4 -");
+#elif defined(ARDUINO_TEENSY_MICROMOD)
+    Serial.print("Micromod - ");
+#elif defined(ARDUINO_TEENSY41)
+    Serial.print("Teensy4.1 -");
+#endif
+    if (ILI948X == ILI9488) Serial.print("ILI9488 Speed:");
+    if (ILI948X == ILI9486) Serial.print("ILI9486 Speed:");
+    Serial.println(ILI948X_SPEED_MHX);
     tft.begin(ILI948X, ILI948X_SPEED_MHX);
 
     tft.setBitDepth(16);
@@ -452,10 +468,10 @@ void drawTestScreen() {
     tft.fillRect(BAND_START_X + BAND_WIDTH * 5, BAND_START_Y, BAND_WIDTH, BAND_HEIGHT, ILI9488_YELLOW);
     tft.fillRect(BAND_START_X + BAND_WIDTH * 6, BAND_START_Y, BAND_WIDTH, BAND_HEIGHT, ILI9488_CYAN);
     tft.fillRect(BAND_START_X + BAND_WIDTH * 7, BAND_START_Y, BAND_WIDTH, BAND_HEIGHT, ILI9488_PINK);
-    //WaitForUserInput();
-//#ifndef ARDUINO_TEENSY41
     memset(pixel_data, 0, sizeof(pixel_data));
     tft.readRect(BAND_START_X, BAND_START_Y, BAND_WIDTH * 8, BAND_HEIGHT, pixel_data);
+    Serial.printf("%04X %04X %04X %04X %04X %04X %04X %04X\n",
+                  ILI9488_RED, ILI9488_GREEN, ILI9488_BLUE, ILI9488_BLACK, ILI9488_WHITE, ILI9488_YELLOW, ILI9488_CYAN, ILI9488_PINK);
     MemoryHexDump(Serial, pixel_data, BAND_WIDTH * 8 * 2, true, "\nColor bars:\n");
 
     tft.writeRect(BAND_START_X, BAND_START_Y + BAND_HEIGHT, BAND_WIDTH * 8, BAND_HEIGHT, pixel_data);
@@ -495,7 +511,6 @@ void drawTestScreen() {
         ppd16++;
     }
     tft.writeRect8BPP(200, 50, 50, 50, (uint8_t *)pixel_data, palette);
-//#endif
     palette[0] = ILI9488_CYAN;
     palette[1] = ILI9488_OLIVE;
     tft.writeRect1BPP(75, 100, 16, 16, pict1bpp, palette);
@@ -558,12 +573,12 @@ void fillScreenTest() {
     tft.fillScreen(ILI9488_BLACK);
 }
 void printTextSizes(const char *sz) {
-  Serial.printf("%s(%d,%d): SPL:%u ", sz, tft.getCursorX(), tft.getCursorY(), tft.strPixelLen(sz));
-  int16_t x, y;
-  uint16_t w, h;
-  tft.getTextBounds(sz, tft.getCursorX(), tft.getCursorY(), &x, &y, &w, &h);
-  Serial.printf(" Rect(%d, %d, %u %u)\n", x, y, w, h);  
-  tft.drawRect(x, y, w, h, ILI9488_GREEN);
+    Serial.printf("%s(%d,%d): SPL:%u ", sz, tft.getCursorX(), tft.getCursorY(), tft.strPixelLen(sz));
+    int16_t x, y;
+    uint16_t w, h;
+    tft.getTextBounds(sz, tft.getCursorX(), tft.getCursorY(), &x, &y, &w, &h);
+    Serial.printf(" Rect(%d, %d, %u %u)\n", x, y, w, h);
+    tft.drawRect(x, y, w, h, ILI9488_GREEN);
 }
 
 
@@ -582,14 +597,14 @@ void drawTextScreen(bool fOpaque) {
     tft.setCursor(0, 5);
     tft.println("AbCdEfGhIj");
 #if 1
-  tft.setFont(Arial_28_Bold);
-  tft.println("0123456789!@#$");
-  tft.setFont(Arial_20_Bold);
-  tft.println("abcdefghijklmnopq");
-  tft.setFont(Arial_14_Bold);
-  tft.println("ABCDEFGHIJKLMNOPQRST");
-  tft.setFont(Arial_10_Bold);
-  tft.println("0123456789zyxwvutu");
+    tft.setFont(Arial_28_Bold);
+    tft.println("0123456789!@#$");
+    tft.setFont(Arial_20_Bold);
+    tft.println("abcdefghijklmnopq");
+    tft.setFont(Arial_14_Bold);
+    tft.println("ABCDEFGHIJKLMNOPQRST");
+    tft.setFont(Arial_10_Bold);
+    tft.println("0123456789zyxwvutu");
 #endif
     tft.setFont(&FreeMonoBoldOblique12pt7b);
     printTextSizes("AdaFruit_MB_12");

@@ -272,7 +272,8 @@ class ILI948x_t4x_p : public Teensy_Parallel_GFX {
     void beginWrite16BitColors();
     void write16BitColor(uint16_t color);
     void endWrite16BitColors();
-    void write16BitColor(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint16_t *pcolors, uint16_t count);
+//    void write16BitColor(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint16_t *pcolors, uint16_t count);
+    void writeRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, const uint16_t *pcolors);
     void fillRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color);
 
     typedef void (*CBF)();

@@ -1441,18 +1441,17 @@ void ILI948x_t4x_p::endWrite16BitColors() {
     CSHigh();
 }
 
-FASTRUN void ILI948x_t4x_p::write16BitColor(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint16_t *pcolors, uint16_t count) {
+//FASTRUN void ILI948x_t4x_p::write16BitColor(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint16_t *pcolors, uint16_t count) {
+FASTRUN void ILI948x_t4x_p::writeRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, const uint16_t *pcolors) {
     while (WR_DMATransferDone == false) {
         // Wait for any DMA transfers to complete
     }
-    // uint32_t area = (x2-x1+1)*(y2-y1+1);
-    uint32_t area = count;
-    // if (!((_lastx1 == x1) && (_lastx2 == x2) && (_lasty1 == y1) && (_lasty2 == y2))) {
-    //   setAddrWindow( x1, y1, x2, y2);
-    //    _lastx1 = x1;  _lastx2 = x2;  _lasty1 = y1;  _lasty2 = y2;
-    // }
-    setAddr(x1, y1, x2, y2);
-    SglBeatWR_nPrm_16(ILI9488_RAMWR, pcolors, area);
+    uint32_t length = w * h;
+    // bail if nothing to do
+    if (length == 0) return;
+    setAddr(x, y, x + w - 1, y + h -1);
+
+    SglBeatWR_nPrm_16(ILI9488_RAMWR, pcolors, length);
 }
 
 void ILI948x_t4x_p::fillRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t color) {
