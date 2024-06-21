@@ -155,7 +155,6 @@ class ILI948x_t4x_p : public Teensy_Parallel_GFX {
     void setRotation(uint8_t r);
     void invertDisplay(bool invert);
     void displayInfo();
-    void setAddrWindow(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
 
     void pushPixels16bit(const uint16_t *pcolors, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
     void pushPixels16bitDMA(const uint16_t *pcolors, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
@@ -315,8 +314,6 @@ class ILI948x_t4x_p : public Teensy_Parallel_GFX {
 
     uint8_t _dummy;
     uint8_t _curMADCTL;
-
-    uint16_t _lastx1, _lastx2, _lasty1, _lasty2;
 
     volatile bool WR_DMATransferDone = true;
     uint32_t MulBeatCountRemain;

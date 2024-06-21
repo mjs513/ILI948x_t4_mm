@@ -368,25 +368,6 @@ FLASHMEM void ILI948x_t4x_p::onCompleteCB(CBF callback) {
     isCB = true;
 }
 
-FASTRUN void ILI948x_t4x_p::setAddrWindow(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
-    uint8_t Command;
-    uint8_t CommandValue[4];
-
-    Command = 0x2A;
-    CommandValue[0U] = x1 >> 8U;
-    CommandValue[1U] = x1 & 0xFF;
-    CommandValue[2U] = x2 >> 8U;
-    CommandValue[3U] = x2 & 0xFF;
-    SglBeatWR_nPrm_8(Command, CommandValue, 4U);
-
-    Command = 0x2B;
-    CommandValue[0U] = y1 >> 8U;
-    CommandValue[1U] = y1 & 0xFF;
-    CommandValue[2U] = y2 >> 8U;
-    CommandValue[3U] = y2 & 0xFF;
-    SglBeatWR_nPrm_8(Command, CommandValue, 4U);
-}
-
 FASTRUN void ILI948x_t4x_p::displayInfo() {
     CSLow();
     Serial.printf("Manufacturer ID: 0x%02X\n", readCommand(ILI9488_RDID1));
@@ -426,13 +407,7 @@ FASTRUN void ILI948x_t4x_p::pushPixels16bit(const uint16_t *pcolors, uint16_t x1
         // Wait for any DMA transfers to complete
     }
     uint32_t area = (x2 - x1 + 1) * (y2 - y1 + 1);
-    if (!((_lastx1 == x1) && (_lastx2 == x2) && (_lasty1 == y1) && (_lasty2 == y2))) {
-        setAddrWindow(x1, y1, x2, y2);
-        _lastx1 = x1;
-        _lastx2 = x2;
-        _lasty1 = y1;
-        _lasty2 = y2;
-    }
+    setAddr(x1, y1, x2, y2);
     SglBeatWR_nPrm_16(ILI9488_RAMWR, pcolors, area);
 }
 
@@ -441,14 +416,7 @@ FASTRUN void ILI948x_t4x_p::pushPixels16bitDMA(const uint16_t *pcolors, uint16_t
         // Wait for any DMA transfers to complete
     }
     uint32_t area = (x2 - x1 + 1) * (y2 - y1 + 1);
-    if (!((_lastx1 == x1) && (_lastx2 == x2) && (_lasty1 == y1) && (_lasty2 == y2))) {
-        setAddrWindow(x1, y1, x2, y2);
-        _lastx1 = x1;
-        _lastx2 = x2;
-        _lasty1 = y1;
-        _lasty2 = y2;
-    }
-
+    setAddr(x1, y1, x2, y2);
     MulBeatWR_nPrm_DMA(ILI9488_RAMWR, pcolors, area);
 }
 
@@ -1243,6 +1211,9 @@ FASTRUN void ILI948x_t4x_p::MulBeatWR_nPrm_DMA(uint32_t const cmd, const void *v
     else {
         // memcpy(framebuff, value, length);
         // arm_dcache_flush((void*)framebuff, sizeof(framebuff)); // always flush cache after writing to DMAMEM variable that will be accessed by DMA
+        if ((uint32_t)value >= 0x20200000u) {
+            arm_dcache_flush((void*)value, length*2);
+        }
 
         FlexIO_Config_MultiBeat();
 
@@ -1600,8 +1571,7 @@ bool ILI948x_t4x_p::writeRectAsyncFlexIO(int16_t x, int16_t y, int16_t w, int16_
     // Start off only supporting shifters with DMA Requests
     if (hw->shifters_dma_channel[SHIFTER_DMA_REQUEST] == 0xff) return false;
 
-    setAddr(x, y, w+w-1, y+h-1);
-    MulBeatWR_nPrm_DMA(ILI9488_RAMWR, pcolors, w*h);
+    pushPixels16bitDMA(pcolors, x, y, x+w-1, y + h - 1);
     return true;
 }
 
