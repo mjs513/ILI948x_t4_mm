@@ -1,9 +1,9 @@
 #ifdef ARDUINO_TEENSY_MICROMOD
 #define ILI948X ILI9486
-#define ILI948X_SPEED_MHX 24
+#define ILI948X_SPEED_MHX 30
 #elif defined(ARDUINO_TEENSY41)
 #define ILI948X ILI9488
-#define ILI948X_SPEED_MHX 24
+#define ILI948X_SPEED_MHX 30
 #endif
 
 
@@ -22,9 +22,11 @@ ILI948x_t4x_p lcd = ILI948x_t4x_p(4, 5, 3);  //(dc, cs, rst)
 #define CENTER Teensy_Parallel_GFX::CENTER
 
 void setup() {
+    while (!Serial && millis() < 5000) {}
     Serial.begin(115200);
     delay(1000);
-    Serial.print(CrashReport);
+    if (CrashReport)Serial.print(CrashReport);
+    Serial.println("Graphic Test - without Frame Buffer");
 
     /*
    * begin(Dispalay type, baud)
@@ -221,8 +223,9 @@ unsigned long testLines(uint16_t color) {
     for (x2 = 0; x2 < w; x2 += 6) lcd.drawLine(x1, y1, x2, y2, color);
     x2 = 0;
     for (y2 = 0; y2 < h; y2 += 6) lcd.drawLine(x1, y1, x2, y2, color);
+    t += micros() - start;
 
-    return micros() - start;
+    return t;
 }
 
 unsigned long testFastLines(uint16_t color1, uint16_t color2) {

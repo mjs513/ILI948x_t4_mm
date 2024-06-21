@@ -16,7 +16,12 @@
 #include "Teensy_Parallel_GFX.h"
 
 #define SHIFTNUM 4            // number of shifters used (must be 1, 2, 4, or 8)
-#define SHIFTER_DMA_REQUEST 3 // only 0, 1, 2, 3 expected to work
+#define SHIFTER_DMA_REQUEST (_write_shifter + SHIFTNUM - 1) // only 0, 1, 2, 3 expected to work
+#define SHIFTER_IRQ (_write_shifter + SHIFTNUM - 1)
+#define BYTES_PER_BEAT (sizeof(uint8_t))
+#define BEATS_PER_SHIFTER (sizeof(uint32_t)/BYTES_PER_BEAT)
+#define BYTES_PER_BURST (sizeof(uint32_t)*SHIFTNUM)
+#define FLEXIO_ISR_PRIORITY 64 // interrupt is timing sensitive, so use relatively high priority (supersedes USB)
 
 #define DATABUFBYTES (480 * 320) / 4
 
@@ -287,7 +292,7 @@ class ILI948x_t4x_p : public Teensy_Parallel_GFX {
     const FlexIOHandler::FLEXIO_Hardware_t *hw;
     static DMAChannel flexDma;
 
-    uint8_t _buad_div = 20;
+    uint8_t _baud_div = 20;
 
     uint8_t _bitDepth = 16;
     uint8_t _rotation = 0;
@@ -315,7 +320,7 @@ class ILI948x_t4x_p : public Teensy_Parallel_GFX {
     uint8_t _dummy;
     uint8_t _curMADCTL;
 
-    volatile bool WR_DMATransferDone = true;
+    volatile bool WR_AsyncTransferDone = true;
     uint32_t MulBeatCountRemain;
     uint16_t *MulBeatDataRemain;
     uint32_t TotalSize;
@@ -341,17 +346,32 @@ class ILI948x_t4x_p : public Teensy_Parallel_GFX {
 
     void SglBeatWR_nPrm_8(uint32_t const cmd, uint8_t const *value, uint32_t const length);
     void SglBeatWR_nPrm_16(uint32_t const cmd, const uint16_t *value, uint32_t const length);
+    // Works on FlexIO1 and FlexIO2 but not 3 and only on Shifters 0-3
     void MulBeatWR_nPrm_DMA(uint32_t const cmd, const void *value, uint32_t const length);
+
+    // Works on FlexIO3 and others as well
+    void MulBeatWR_nPrm_IRQ(uint32_t const cmd,  const void *value, uint32_t const length);
+    static void flexio_ISR();
+    void flexIRQ_Callback();
+
 
     void microSecondDelay();
 
     static void dmaISR();
     void flexDma_Callback();
+    static ILI948x_t4x_p *IRQcallback;
 
     bool isCB = false;
     void _onCompleteCB();
 
     static ILI948x_t4x_p *dmaCallback;
+
+    /* variables used by ISR */
+    volatile uint32_t bytes_remaining;
+    volatile unsigned int bursts_to_complete;
+    volatile uint32_t *readPtr;
+    uint32_t finalBurstBuffer[SHIFTNUM];
+
 };
 #endif //__cplusplus
 #endif //_IILI948x_t4x_p.h_
