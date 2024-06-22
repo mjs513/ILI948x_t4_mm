@@ -3,11 +3,11 @@
 
 // DMAMEM uint32_t framebuff[DATABUFBYTES];
 
-#if !defined(ARDUINO_TEENSY_MICROMOD)
-#warning This library only supports the Teensy Micromod!
+#if !defined(ARDUINO_TEENSY_MICROMOD) && !defined(ARDUINO_TEENSY41)
+#warning This library only supports the Teensy Micromod and Teensy 4.1
 #endif
 
-// #define DEBUG
+#define DEBUG
 #define DEBUG_VERBOSE
 
 #ifndef DEBUG
@@ -1059,9 +1059,15 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Config_MultiBeat() {
 
    // configure interrupts
     if (hw->shifters_dma_channel[SHIFTER_DMA_REQUEST] == 0xff) {
+        DBGPrintf("ILI948x_t4x_p::FlexIO_Config_MultiBeat() - IRQ mode\n");
         attachInterruptVector(hw->flex_irq, flexio_ISR);
         NVIC_ENABLE_IRQ(hw->flex_irq);
         NVIC_SET_PRIORITY(hw->flex_irq, FLEXIO_ISR_PRIORITY);
+        
+        // disable interrupts until later
+        p->SHIFTSIEN &= ~(1 << SHIFTER_IRQ);
+        p->TIMIEN &= ~_flexio_timer_mask;
+
     } else {
         p->SHIFTSDEN |= 1U << (SHIFTER_DMA_REQUEST); // enable DMA trigger when shifter status flag is set on shifter SHIFTER_DMA_REQUEST
     }
@@ -1581,6 +1587,7 @@ FASTRUN void ILI948x_t4x_p::MulBeatWR_nPrm_IRQ(uint32_t const cmd,  const void *
 {
     if (length == 0) return; // bail if no data to output
 
+    DBGPrintf("ILI948x_t4x_p::MulBeatWR_nPrm_IRQ(%x, %p, %u) - entered\n", cmd, value, length);
   while(WR_AsyncTransferDone == false)
   {
     //Wait for any DMA transfers to complete
@@ -1615,15 +1622,11 @@ FASTRUN void ILI948x_t4x_p::MulBeatWR_nPrm_IRQ(uint32_t const cmd,  const void *
 
     bytes_remaining = bytes;
     readPtr = (uint32_t*)value;
-    //Serial.printf ("arg addr: %x, readPtr addr: %x \n", value, readPtr);
-    //Serial.printf("START::bursts_to_complete: %d bytes_remaining: %d \n", bursts_to_complete, bytes_remaining);
+    Serial.printf ("arg addr: %x, readPtr addr: %x \n", value, readPtr);
+    Serial.printf("START::bursts_to_complete: %d bytes_remaining: %d \n", bursts_to_complete, bytes_remaining);
   
     uint8_t beats = SHIFTNUM * BEATS_PER_SHIFTER;
-    p->TIMCMP[0] = ((beats * 2U - 1) << 8) | (_baud_div / 2U - 1U);
-
-    p->TIMCMP[_flexio_timer] =
-        (((1 * 2) - 1) << 8)     /* TIMCMP[15:8] = number of beats x 2 – 1 */
-        | ((_baud_div / 2) - 1); /* TIMCMP[7:0] = baud rate divider / 2 – 1 */
+    p->TIMCMP[_flexio_timer] = ((beats * 2U - 1) << 8) | (_baud_div / 2U - 1U);
 
     p->TIMSTAT = _flexio_timer_mask; // clear timer interrupt signal
     
@@ -1631,6 +1634,9 @@ FASTRUN void ILI948x_t4x_p::MulBeatWR_nPrm_IRQ(uint32_t const cmd,  const void *
     
     IRQcallback = this;
     // enable interrupts to trigger bursts
+    print_flexio_debug_data(pFlex, _flexio_timer, _write_shifter, _read_shifter);
+
+    digitalToggleFast(2);
     p->TIMIEN |= _flexio_timer_mask;
     p->SHIFTSIEN |= (1 << SHIFTER_IRQ);
     
@@ -1641,9 +1647,13 @@ FASTRUN void ILI948x_t4x_p::MulBeatWR_nPrm_IRQ(uint32_t const cmd,  const void *
 bool ILI948x_t4x_p::writeRectAsyncFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *pcolors)
 {
     // Start off only supporting shifters with DMA Requests
-    if (hw->shifters_dma_channel[SHIFTER_DMA_REQUEST] == 0xff) return false;
-
-    pushPixels16bitDMA(pcolors, x, y, x+w-1, y + h - 1);
+    if (hw->shifters_dma_channel[SHIFTER_DMA_REQUEST] != 0xff) {
+        pushPixels16bitDMA(pcolors, x, y, x+w-1, y + h - 1);
+    } else {
+        // FlexIO3 IRQ version.
+        setAddr(x, y, x + w - 1, y + h - 1);
+        MulBeatWR_nPrm_IRQ(ILI9488_RAMWR, pcolors, w * h);
+    }
     return true;
 }
 
@@ -1657,8 +1667,11 @@ bool ILI948x_t4x_p::writeRectAsyncActiveFlexIO() {
 
 
 FASTRUN void ILI948x_t4x_p::flexIRQ_Callback(){
+    digitalToggleFast(2);
+    Serial.printf("%x %x %u %u ", p->TIMSTAT, p->SHIFTSTAT, bursts_to_complete, bytes_remaining);
   
  if (p->TIMSTAT & _flexio_timer_mask) { // interrupt from end of burst
+        Serial.write('T');
         p->TIMSTAT = _flexio_timer_mask; // clear timer interrupt signal
         bursts_to_complete--;
         if (bursts_to_complete == 0) {
@@ -1673,6 +1686,7 @@ FASTRUN void ILI948x_t4x_p::flexIRQ_Callback(){
     }
 
     if (p->SHIFTSTAT & (1 << SHIFTER_IRQ)) { // interrupt from empty shifter buffer
+        Serial.write('S');
         // note, the interrupt signal is cleared automatically when writing data to the shifter buffers
         if (bytes_remaining == 0) { // just started final burst, no data to load
             p->SHIFTSIEN &= ~(1 << SHIFTER_IRQ); // disable shifter interrupt signal
@@ -1693,6 +1707,7 @@ FASTRUN void ILI948x_t4x_p::flexIRQ_Callback(){
         }
     }
   }
+    Serial.write('\n');
     asm("dsb");
 }
 
