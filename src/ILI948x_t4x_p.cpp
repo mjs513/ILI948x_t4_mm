@@ -12,10 +12,12 @@
 #ifndef DEBUG
 #undef DEBUG_VERBOSE
 void inline DBGPrintf(...){};
+void inline DBGWrite(uint8_t ch) {};
 void inline DBGFlush(){};
 #else
 #define DBGPrintf Serial.printf
 #define DBGFlush Serial.flush
+#define DBGWrite Serial.write
 #endif
 
 #ifndef DEBUG_VERBOSE
@@ -498,7 +500,7 @@ FLASHMEM void ILI948x_t4x_p::displayInit(uint8_t disp_name) {
         for (uint8_t j = 0; j < numArgs; j++) {
             DBGPrintf(" 0x%x ", commandVals[j]);
         }
-        Serial.println();
+        DBGPrintf("\n");
         SglBeatWR_nPrm_8(cmd, commandVals, numArgs);
         delay(ms);
     }
@@ -886,7 +888,6 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Config_SnglBeat() {
         return;
     flex_config = CONFIG_SNGLBEAT;
 
-    static uint8_t DEBUG_COUNT = 1;
 
     gpioWrite();
 
@@ -934,10 +935,14 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Config_SnglBeat() {
         | FLEXIO_TIMCTL_PINPOL * (1)                        /* Timer' pin active low */
         | FLEXIO_TIMCTL_TIMOD(1);                           /* Timer mode as dual 8-bit counters baud/bit */
 
+
+    /*
+    static uint8_t DEBUG_COUNT = 1;
     if (DEBUG_COUNT) {
         DEBUG_COUNT--;
         print_flexio_debug_data(pFlex, _flexio_timer, _write_shifter, _read_shifter);
     }
+    */
 
     /* Enable FlexIO */
     p->CTRL |= FLEXIO_CTRL_FLEXEN;
@@ -1036,7 +1041,7 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Config_MultiBeat() {
     /* Enable FlexIO */
     p->CTRL |= FLEXIO_CTRL_FLEXEN;
 
-    print_flexio_debug_data(pFlex, _flexio_timer, _write_shifter, _read_shifter);
+    //print_flexio_debug_data(pFlex, _flexio_timer, _write_shifter, _read_shifter);
 
    // configure interrupts
     if (hw->shifters_dma_channel[SHIFTER_DMA_REQUEST] == 0xff) {
@@ -1160,7 +1165,7 @@ ILI948x_t4x_p *ILI948x_t4x_p::dmaCallback = nullptr;
 DMAChannel ILI948x_t4x_p::flexDma;
 
 FASTRUN void ILI948x_t4x_p::MulBeatWR_nPrm_DMA(uint32_t const cmd, const void *value, uint32_t const length) {
-    Serial.printf("ILI948x_t4x_p::MulBeatWR_nPrm_DMA(%x, %x, %u\n", cmd, value, length);
+    DBGPrintf("ILI948x_t4x_p::MulBeatWR_nPrm_DMA(%x, %x, %u\n", cmd, value, length);
     while (WR_AsyncTransferDone == false) {
         // Wait for any DMA transfers to complete
     }
@@ -1603,8 +1608,8 @@ FASTRUN void ILI948x_t4x_p::MulBeatWR_nPrm_IRQ(uint32_t const cmd,  const void *
 
     bytes_remaining = bytes;
     readPtr = (uint32_t*)value;
-    Serial.printf ("arg addr: %x, readPtr addr: %x \n", value, readPtr);
-    Serial.printf("START::bursts_to_complete: %d bytes_remaining: %d \n", bursts_to_complete, bytes_remaining);
+    DBGPrintf ("arg addr: %x, readPtr addr: %x \n", value, readPtr);
+    DBGPrintf("START::bursts_to_complete: %d bytes_remaining: %d \n", bursts_to_complete, bytes_remaining);
   
     uint8_t beats = SHIFTNUM * BEATS_PER_SHIFTER;
     p->TIMCMP[_flexio_timer] = ((beats * 2U - 1) << 8) | (_baud_div / 2U - 1U);
@@ -1615,7 +1620,7 @@ FASTRUN void ILI948x_t4x_p::MulBeatWR_nPrm_IRQ(uint32_t const cmd,  const void *
     
     IRQcallback = this;
     // enable interrupts to trigger bursts
-    print_flexio_debug_data(pFlex, _flexio_timer, _write_shifter, _read_shifter);
+    //print_flexio_debug_data(pFlex, _flexio_timer, _write_shifter, _read_shifter);
 
 //    digitalToggleFast(2);
     p->TIMIEN |= _flexio_timer_mask;
@@ -1651,7 +1656,7 @@ FASTRUN void ILI948x_t4x_p::flexIRQ_Callback(){
     DBGPrintf("%x %x %u %u ", p->TIMSTAT, p->SHIFTSTAT, bursts_to_complete, bytes_remaining);
   
  if (p->TIMSTAT & _flexio_timer_mask) { // interrupt from end of burst
-        //Serial.write('T');
+        DBGWrite('T');
         p->TIMSTAT = _flexio_timer_mask; // clear timer interrupt signal
         bursts_to_complete--;
         if (bursts_to_complete == 0) {
@@ -1662,13 +1667,13 @@ FASTRUN void ILI948x_t4x_p::flexIRQ_Callback(){
             CSHigh();
             _onCompleteCB();
             digitalWriteFast(2, LOW);
-            //Serial.write("END");
+            DBGPrintf("END\n");
             return;
         }
     }
 
     if (p->SHIFTSTAT & (1 << SHIFTER_IRQ)) { // interrupt from empty shifter buffer
-        //Serial.write('S');
+        DBGWrite('S');
         // note, the interrupt signal is cleared automatically when writing data to the shifter buffers
         if (bytes_remaining == 0) { // just started final burst, no data to load
             p->SHIFTSIEN &= ~(1 << SHIFTER_IRQ); // disable shifter interrupt signal
@@ -1677,22 +1682,14 @@ FASTRUN void ILI948x_t4x_p::flexIRQ_Callback(){
             p->TIMCMP[0] = ((beats * 2U - 1) << 8) | (_baud_div / 2U - 1); // takes effect on final burst
             readPtr = finalBurstBuffer;
             bytes_remaining = 0;
-            #if 1
             for (int i = SHIFTNUM - 1; i >= 0; i--) {
                 digitalToggleFast(3);
                 uint32_t data = readPtr[i];
                 p->SHIFTBUFBYS[i] = ((data >> 16) & 0xFFFF) | ((data << 16) & 0xFFFF0000);
 
             }
-            #else
-            for (int i = 0; i < SHIFTNUM; i++) {
-                uint32_t data = *readPtr++;
-                p->SHIFTBUFBYS[i] = ((data >> 16) & 0xFFFF) | ((data << 16) & 0xFFFF0000);
-            }
-            #endif
         } else {
             bytes_remaining -= BYTES_PER_BURST;
-            #if 1
             // try filling in reverse order
             for (int i = SHIFTNUM - 1; i >= 0; i--) {
                 digitalToggleFast(3);
@@ -1701,26 +1698,13 @@ FASTRUN void ILI948x_t4x_p::flexIRQ_Callback(){
 
             }
             readPtr += SHIFTNUM;
-            #else
-            for (int i = 0; i < SHIFTNUM; i++) {
-                digitalToggleFast(3);
-                uint32_t data = *readPtr++;
-                p->SHIFTBUFBYS[i] = ((data >> 16) & 0xFFFF) | ((data << 16) & 0xFFFF0000);
-
-                uint8_t repeat_count = 255;
-                while ((0 == (p->SHIFTSTAT & (1U << SHIFTER_IRQ))) && --repeat_count) {}
-                //if (repeat_count == 0) {
-                //    Serial.printf(" TO:%u %x\n", i, p->SHIFTSTAT);
-                //}
-            }
-            #endif
         }
         if (bytes_remaining == 0) {
-            //Serial.write('L');
+            DBGWrite('L');
             p->SHIFTSIEN &= ~(1 << SHIFTER_IRQ);
         }
     }
-    //Serial.write('\n');
+    DBGWrite('\n');
     asm("dsb");
     digitalWriteFast(2, LOW);
 
