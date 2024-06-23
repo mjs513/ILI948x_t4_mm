@@ -6,8 +6,8 @@
 #warning This library only supports the Teensy Micromod and Teensy 4.1
 #endif
 
-#define DEBUG
-#define DEBUG_VERBOSE
+//#define DEBUG
+//#define DEBUG_VERBOSE
 
 #ifndef DEBUG
 #undef DEBUG_VERBOSE
@@ -1642,16 +1642,16 @@ bool ILI948x_t4x_p::writeRectAsyncActiveFlexIO() {
     // return the state of last transfer
     // may depend on if the FlexIO shifter supports DMA or not on how
     // we implement this.
-    return WR_AsyncTransferDone; 
+    return !WR_AsyncTransferDone; 
 }
 
 
 FASTRUN void ILI948x_t4x_p::flexIRQ_Callback(){
     digitalWriteFast(2, HIGH);
-    Serial.printf("%x %x %u %u ", p->TIMSTAT, p->SHIFTSTAT, bursts_to_complete, bytes_remaining);
+    DBGPrintf("%x %x %u %u ", p->TIMSTAT, p->SHIFTSTAT, bursts_to_complete, bytes_remaining);
   
  if (p->TIMSTAT & _flexio_timer_mask) { // interrupt from end of burst
-        Serial.write('T');
+        //Serial.write('T');
         p->TIMSTAT = _flexio_timer_mask; // clear timer interrupt signal
         bursts_to_complete--;
         if (bursts_to_complete == 0) {
@@ -1662,13 +1662,13 @@ FASTRUN void ILI948x_t4x_p::flexIRQ_Callback(){
             CSHigh();
             _onCompleteCB();
             digitalWriteFast(2, LOW);
-            Serial.println("END");
+            //Serial.write("END");
             return;
         }
     }
 
     if (p->SHIFTSTAT & (1 << SHIFTER_IRQ)) { // interrupt from empty shifter buffer
-        Serial.write('S');
+        //Serial.write('S');
         // note, the interrupt signal is cleared automatically when writing data to the shifter buffers
         if (bytes_remaining == 0) { // just started final burst, no data to load
             p->SHIFTSIEN &= ~(1 << SHIFTER_IRQ); // disable shifter interrupt signal
@@ -1707,21 +1707,20 @@ FASTRUN void ILI948x_t4x_p::flexIRQ_Callback(){
                 uint32_t data = *readPtr++;
                 p->SHIFTBUFBYS[i] = ((data >> 16) & 0xFFFF) | ((data << 16) & 0xFFFF0000);
 
-                // BUGBUG - added - hangs
                 uint8_t repeat_count = 255;
                 while ((0 == (p->SHIFTSTAT & (1U << SHIFTER_IRQ))) && --repeat_count) {}
-                if (repeat_count == 0) {
-                    Serial.printf(" TO:%u %x\n", i, p->SHIFTSTAT);
-                }
+                //if (repeat_count == 0) {
+                //    Serial.printf(" TO:%u %x\n", i, p->SHIFTSTAT);
+                //}
             }
             #endif
         }
         if (bytes_remaining == 0) {
-            Serial.write('L');
+            //Serial.write('L');
             p->SHIFTSIEN &= ~(1 << SHIFTER_IRQ);
         }
     }
-    Serial.write('\n');
+    //Serial.write('\n');
     asm("dsb");
     digitalWriteFast(2, LOW);
 
