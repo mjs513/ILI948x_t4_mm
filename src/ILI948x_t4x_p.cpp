@@ -1,7 +1,6 @@
 #include "ILI948x_t4x_p.h"
 #include "ILI948x_t4x_p_default_flexio_pins.h"
 
-// DMAMEM uint32_t framebuff[DATABUFBYTES];
 
 #if !defined(ARDUINO_TEENSY_MICROMOD) && !defined(ARDUINO_TEENSY41)
 #warning This library only supports the Teensy Micromod and Teensy 4.1
@@ -1033,29 +1032,11 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Config_MultiBeat() {
         | FLEXIO_TIMCTL_PINPOL * (1U)                    /* Timer' pin active low */
         | FLEXIO_TIMCTL_TIMOD(1U);                       /* Timer mode 8-bit baud counter */
 
-    print_flexio_debug_data(pFlex, _flexio_timer, _write_shifter, _read_shifter);
 
-    /*
-      Serial.printf("CCM_CDCDR: %x\n", CCM_CDCDR);
-      Serial.printf("VERID:%x PARAM:%x CTRL:%x PIN: %x\n", IMXRT_FLEXIO2_S.VERID, IMXRT_FLEXIO2_S.PARAM, IMXRT_FLEXIO2_S.CTRL, IMXRT_FLEXIO2_S.PIN);
-      Serial.printf("SHIFTSTAT:%x SHIFTERR=%x TIMSTAT=%x\n", IMXRT_FLEXIO2_S.SHIFTSTAT, IMXRT_FLEXIO2_S.SHIFTERR, IMXRT_FLEXIO2_S.TIMSTAT);
-      Serial.printf("SHIFTSIEN:%x SHIFTEIEN=%x TIMIEN=%x\n", IMXRT_FLEXIO2_S.SHIFTSIEN, IMXRT_FLEXIO2_S.SHIFTEIEN, IMXRT_FLEXIO2_S.TIMIEN);
-      Serial.printf("SHIFTSDEN:%x SHIFTSTATE=%x\n", IMXRT_FLEXIO2_S.SHIFTSDEN, IMXRT_FLEXIO2_S.SHIFTSTATE);
-      for(int i=0; i<SHIFTNUM; i++){
-        Serial.printf("SHIFTCTL[%d]:%x \n", i, IMXRT_FLEXIO2_S.SHIFTCTL[i]);
-        }
-
-      for(int i=0; i<SHIFTNUM; i++){
-        Serial.printf("SHIFTCFG[%d]:%x \n", i, IMXRT_FLEXIO2_S.SHIFTCFG[i]);
-        }
-
-      Serial.printf("TIMCTL:%x %x %x %x\n", IMXRT_FLEXIO2_S.TIMCTL[0], IMXRT_FLEXIO2_S.TIMCTL[1], IMXRT_FLEXIO2_S.TIMCTL[2], IMXRT_FLEXIO2_S.TIMCTL[3]);
-      Serial.printf("TIMCFG:%x %x %x %x\n", IMXRT_FLEXIO2_S.TIMCFG[0], IMXRT_FLEXIO2_S.TIMCFG[1], IMXRT_FLEXIO2_S.TIMCFG[2], IMXRT_FLEXIO2_S.TIMCFG[3]);
-      Serial.printf("TIMCMP:%x %x %x %x\n", IMXRT_FLEXIO2_S.TIMCMP[0], IMXRT_FLEXIO2_S.TIMCMP[1], IMXRT_FLEXIO2_S.TIMCMP[2], IMXRT_FLEXIO2_S.TIMCMP[3]);
-    */
     /* Enable FlexIO */
     p->CTRL |= FLEXIO_CTRL_FLEXEN;
 
+    print_flexio_debug_data(pFlex, _flexio_timer, _write_shifter, _read_shifter);
 
    // configure interrupts
     if (hw->shifters_dma_channel[SHIFTER_DMA_REQUEST] == 0xff) {
@@ -1636,10 +1617,9 @@ FASTRUN void ILI948x_t4x_p::MulBeatWR_nPrm_IRQ(uint32_t const cmd,  const void *
     // enable interrupts to trigger bursts
     print_flexio_debug_data(pFlex, _flexio_timer, _write_shifter, _read_shifter);
 
-    digitalToggleFast(2);
+//    digitalToggleFast(2);
     p->TIMIEN |= _flexio_timer_mask;
     p->SHIFTSIEN |= (1 << SHIFTER_IRQ);
-    
 }
 
 
@@ -1667,7 +1647,7 @@ bool ILI948x_t4x_p::writeRectAsyncActiveFlexIO() {
 
 
 FASTRUN void ILI948x_t4x_p::flexIRQ_Callback(){
-    digitalToggleFast(2);
+    digitalWriteFast(2, HIGH);
     Serial.printf("%x %x %u %u ", p->TIMSTAT, p->SHIFTSTAT, bursts_to_complete, bytes_remaining);
   
  if (p->TIMSTAT & _flexio_timer_mask) { // interrupt from end of burst
@@ -1681,6 +1661,8 @@ FASTRUN void ILI948x_t4x_p::flexIRQ_Callback(){
             microSecondDelay();
             CSHigh();
             _onCompleteCB();
+            digitalWriteFast(2, LOW);
+            Serial.println("END");
             return;
         }
     }
@@ -1695,20 +1677,54 @@ FASTRUN void ILI948x_t4x_p::flexIRQ_Callback(){
             p->TIMCMP[0] = ((beats * 2U - 1) << 8) | (_baud_div / 2U - 1); // takes effect on final burst
             readPtr = finalBurstBuffer;
             bytes_remaining = 0;
+            #if 1
+            for (int i = SHIFTNUM - 1; i >= 0; i--) {
+                digitalToggleFast(3);
+                uint32_t data = readPtr[i];
+                p->SHIFTBUFBYS[i] = ((data >> 16) & 0xFFFF) | ((data << 16) & 0xFFFF0000);
+
+            }
+            #else
             for (int i = 0; i < SHIFTNUM; i++) {
                 uint32_t data = *readPtr++;
                 p->SHIFTBUFBYS[i] = ((data >> 16) & 0xFFFF) | ((data << 16) & 0xFFFF0000);
             }
+            #endif
         } else {
             bytes_remaining -= BYTES_PER_BURST;
+            #if 1
+            // try filling in reverse order
+            for (int i = SHIFTNUM - 1; i >= 0; i--) {
+                digitalToggleFast(3);
+                uint32_t data = readPtr[i];
+                p->SHIFTBUFBYS[i] = ((data >> 16) & 0xFFFF) | ((data << 16) & 0xFFFF0000);
+
+            }
+            readPtr += SHIFTNUM;
+            #else
             for (int i = 0; i < SHIFTNUM; i++) {
+                digitalToggleFast(3);
                 uint32_t data = *readPtr++;
                 p->SHIFTBUFBYS[i] = ((data >> 16) & 0xFFFF) | ((data << 16) & 0xFFFF0000);
+
+                // BUGBUG - added - hangs
+                uint8_t repeat_count = 255;
+                while ((0 == (p->SHIFTSTAT & (1U << SHIFTER_IRQ))) && --repeat_count) {}
+                if (repeat_count == 0) {
+                    Serial.printf(" TO:%u %x\n", i, p->SHIFTSTAT);
+                }
+            }
+            #endif
+        }
+        if (bytes_remaining == 0) {
+            Serial.write('L');
+            p->SHIFTSIEN &= ~(1 << SHIFTER_IRQ);
         }
     }
-  }
     Serial.write('\n');
     asm("dsb");
+    digitalWriteFast(2, LOW);
+
 }
 
 

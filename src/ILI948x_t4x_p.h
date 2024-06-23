@@ -23,8 +23,6 @@
 #define BYTES_PER_BURST (sizeof(uint32_t)*SHIFTNUM)
 #define FLEXIO_ISR_PRIORITY 64 // interrupt is timing sensitive, so use relatively high priority (supersedes USB)
 
-#define DATABUFBYTES (480 * 320) / 4
-
 #define _TFTWIDTH 320  // ILI9488 TFT width in default rotation
 #define _TFTHEIGHT 480 // ILI9488 TFT height in default rotation
 

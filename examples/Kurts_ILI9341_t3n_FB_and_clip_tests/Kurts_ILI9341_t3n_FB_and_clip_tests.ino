@@ -67,6 +67,7 @@ ILI948x_t4x_p tft = ILI948x_t4x_p(4, 5, 3);  //(dc, cs, rst)
 
 void setup() {
     pinMode(2, OUTPUT);
+    pinMode(3, OUTPUT);
     while (!Serial && (millis() < 4000))
         ;
     Serial.begin(115200);
