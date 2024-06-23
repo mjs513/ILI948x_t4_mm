@@ -1,22 +1,23 @@
 #include "ILI948x_t4x_p.h"
 #include "ILI948x_t4x_p_default_flexio_pins.h"
 
-// DMAMEM uint32_t framebuff[DATABUFBYTES];
 
-#if !defined(ARDUINO_TEENSY_MICROMOD)
-#warning This library only supports the Teensy Micromod!
+#if !defined(ARDUINO_TEENSY_MICROMOD) && !defined(ARDUINO_TEENSY41)
+#warning This library only supports the Teensy Micromod and Teensy 4.1
 #endif
 
-// #define DEBUG
-#define DEBUG_VERBOSE
+//#define DEBUG
+//#define DEBUG_VERBOSE
 
 #ifndef DEBUG
 #undef DEBUG_VERBOSE
 void inline DBGPrintf(...){};
+void inline DBGWrite(uint8_t ch) {};
 void inline DBGFlush(){};
 #else
 #define DBGPrintf Serial.printf
 #define DBGFlush Serial.flush
+#define DBGWrite Serial.write
 #endif
 
 #ifndef DEBUG_VERBOSE
@@ -145,34 +146,34 @@ FLASHMEM void ILI948x_t4x_p::begin(uint8_t display_name, uint8_t buad_div) {
 
     switch (buad_div) {
     case 2:
-        _buad_div = 120;
+        _baud_div = 120;
         break;
     case 4:
-        _buad_div = 60;
+        _baud_div = 60;
         break;
     case 8:
-        _buad_div = 30;
+        _baud_div = 30;
         break;
     case 12:
-        _buad_div = 20;
+        _baud_div = 20;
         break;
     case 20:
-        _buad_div = 12;
+        _baud_div = 12;
         break;
     case 24:
-        _buad_div = 10;
+        _baud_div = 10;
         break;
     case 30:
-        _buad_div = 8;
+        _baud_div = 8;
         break;
     case 40:
-        _buad_div = 6;
+        _baud_div = 6;
         break;
     default:
-        _buad_div = 20; // 12Mhz
+        _baud_div = 20; // 12Mhz
         break;
     }
-    DBGPrintf("Bus speed: %d Mhz Div: %d\n", buad_div, _buad_div);
+    DBGPrintf("Bus speed: %d Mhz Div: %d\n", buad_div, _baud_div);
     pinMode(_cs, OUTPUT);  // CS
     pinMode(_dc, OUTPUT);  // DC
     pinMode(_rst, OUTPUT); // RST
@@ -403,7 +404,7 @@ FASTRUN void ILI948x_t4x_p::displayInfo() {
 }
 
 FASTRUN void ILI948x_t4x_p::pushPixels16bit(const uint16_t *pcolors, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
-    while (WR_DMATransferDone == false) {
+    while (WR_AsyncTransferDone == false) {
         // Wait for any DMA transfers to complete
     }
     uint32_t area = (x2 - x1 + 1) * (y2 - y1 + 1);
@@ -412,7 +413,7 @@ FASTRUN void ILI948x_t4x_p::pushPixels16bit(const uint16_t *pcolors, uint16_t x1
 }
 
 FASTRUN void ILI948x_t4x_p::pushPixels16bitDMA(const uint16_t *pcolors, uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2) {
-    while (WR_DMATransferDone == false) {
+    while (WR_AsyncTransferDone == false) {
         // Wait for any DMA transfers to complete
     }
     uint32_t area = (x2 - x1 + 1) * (y2 - y1 + 1);
@@ -499,7 +500,7 @@ FLASHMEM void ILI948x_t4x_p::displayInit(uint8_t disp_name) {
         for (uint8_t j = 0; j < numArgs; j++) {
             DBGPrintf(" 0x%x ", commandVals[j]);
         }
-        Serial.println();
+        DBGPrintf("\n");
         SglBeatWR_nPrm_8(cmd, commandVals, numArgs);
         delay(ms);
     }
@@ -768,7 +769,7 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Config_SnglBeat_Read() {
 }
 
 FASTRUN uint8_t ILI948x_t4x_p::readCommand(uint8_t const cmd) {
-    while (WR_DMATransferDone == false) {
+    while (WR_AsyncTransferDone == false) {
         // Wait for any DMA transfers to complete
     }
 
@@ -812,7 +813,7 @@ FASTRUN uint8_t ILI948x_t4x_p::readCommand(uint8_t const cmd) {
 
 // Note we could combine the above with thsi.
 FASTRUN uint32_t ILI948x_t4x_p::readCommandN(uint8_t const cmd, uint8_t count_bytes) {
-    while (WR_DMATransferDone == false) {
+    while (WR_AsyncTransferDone == false) {
         // Wait for any DMA transfers to complete
     }
 
@@ -887,7 +888,6 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Config_SnglBeat() {
         return;
     flex_config = CONFIG_SNGLBEAT;
 
-    static uint8_t DEBUG_COUNT = 1;
 
     gpioWrite();
 
@@ -915,7 +915,7 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Config_SnglBeat() {
     /* Configure the timer for shift clock */
     p->TIMCMP[_flexio_timer] =
         (((1 * 2) - 1) << 8)     /* TIMCMP[15:8] = number of beats x 2 – 1 */
-        | ((_buad_div / 2) - 1); /* TIMCMP[7:0] = baud rate divider / 2 – 1 */
+        | ((_baud_div / 2) - 1); /* TIMCMP[7:0] = baud rate divider / 2 – 1 */
 
     p->TIMCFG[_flexio_timer] =
         FLEXIO_TIMCFG_TIMOUT(0)       /* Timer output logic one when enabled and not affected by reset */
@@ -935,10 +935,14 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Config_SnglBeat() {
         | FLEXIO_TIMCTL_PINPOL * (1)                        /* Timer' pin active low */
         | FLEXIO_TIMCTL_TIMOD(1);                           /* Timer mode as dual 8-bit counters baud/bit */
 
+
+    /*
+    static uint8_t DEBUG_COUNT = 1;
     if (DEBUG_COUNT) {
         DEBUG_COUNT--;
         print_flexio_debug_data(pFlex, _flexio_timer, _write_shifter, _read_shifter);
     }
+    */
 
     /* Enable FlexIO */
     p->CTRL |= FLEXIO_CTRL_FLEXEN;
@@ -1014,7 +1018,7 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Config_MultiBeat() {
     /* Configure the timer for shift clock */
     p->TIMCMP[_flexio_timer] =
         ((MulBeatWR_BeatQty * 2U - 1) << 8) /* TIMCMP[15:8] = number of beats x 2 – 1 */
-        | (_buad_div / 2U - 1U);            /* TIMCMP[7:0] = shift clock divide ratio / 2 - 1 */
+        | (_baud_div / 2U - 1U);            /* TIMCMP[7:0] = shift clock divide ratio / 2 - 1 */
 
     p->TIMCFG[_flexio_timer] = FLEXIO_TIMCFG_TIMOUT(0U)       /* Timer output logic one when enabled and not affected by reset */
                                | FLEXIO_TIMCFG_TIMDEC(0U)     /* Timer decrement on FlexIO clock, shift clock equals timer output */
@@ -1033,35 +1037,32 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Config_MultiBeat() {
         | FLEXIO_TIMCTL_PINPOL * (1U)                    /* Timer' pin active low */
         | FLEXIO_TIMCTL_TIMOD(1U);                       /* Timer mode 8-bit baud counter */
 
-    print_flexio_debug_data(pFlex, _flexio_timer, _write_shifter, _read_shifter);
 
-    /*
-      Serial.printf("CCM_CDCDR: %x\n", CCM_CDCDR);
-      Serial.printf("VERID:%x PARAM:%x CTRL:%x PIN: %x\n", IMXRT_FLEXIO2_S.VERID, IMXRT_FLEXIO2_S.PARAM, IMXRT_FLEXIO2_S.CTRL, IMXRT_FLEXIO2_S.PIN);
-      Serial.printf("SHIFTSTAT:%x SHIFTERR=%x TIMSTAT=%x\n", IMXRT_FLEXIO2_S.SHIFTSTAT, IMXRT_FLEXIO2_S.SHIFTERR, IMXRT_FLEXIO2_S.TIMSTAT);
-      Serial.printf("SHIFTSIEN:%x SHIFTEIEN=%x TIMIEN=%x\n", IMXRT_FLEXIO2_S.SHIFTSIEN, IMXRT_FLEXIO2_S.SHIFTEIEN, IMXRT_FLEXIO2_S.TIMIEN);
-      Serial.printf("SHIFTSDEN:%x SHIFTSTATE=%x\n", IMXRT_FLEXIO2_S.SHIFTSDEN, IMXRT_FLEXIO2_S.SHIFTSTATE);
-      for(int i=0; i<SHIFTNUM; i++){
-        Serial.printf("SHIFTCTL[%d]:%x \n", i, IMXRT_FLEXIO2_S.SHIFTCTL[i]);
-        }
-
-      for(int i=0; i<SHIFTNUM; i++){
-        Serial.printf("SHIFTCFG[%d]:%x \n", i, IMXRT_FLEXIO2_S.SHIFTCFG[i]);
-        }
-
-      Serial.printf("TIMCTL:%x %x %x %x\n", IMXRT_FLEXIO2_S.TIMCTL[0], IMXRT_FLEXIO2_S.TIMCTL[1], IMXRT_FLEXIO2_S.TIMCTL[2], IMXRT_FLEXIO2_S.TIMCTL[3]);
-      Serial.printf("TIMCFG:%x %x %x %x\n", IMXRT_FLEXIO2_S.TIMCFG[0], IMXRT_FLEXIO2_S.TIMCFG[1], IMXRT_FLEXIO2_S.TIMCFG[2], IMXRT_FLEXIO2_S.TIMCFG[3]);
-      Serial.printf("TIMCMP:%x %x %x %x\n", IMXRT_FLEXIO2_S.TIMCMP[0], IMXRT_FLEXIO2_S.TIMCMP[1], IMXRT_FLEXIO2_S.TIMCMP[2], IMXRT_FLEXIO2_S.TIMCMP[3]);
-    */
     /* Enable FlexIO */
     p->CTRL |= FLEXIO_CTRL_FLEXEN;
-    p->SHIFTSDEN |= 1U << (SHIFTER_DMA_REQUEST); // enable DMA trigger when shifter status flag is set on shifter SHIFTER_DMA_REQUEST
+
+    //print_flexio_debug_data(pFlex, _flexio_timer, _write_shifter, _read_shifter);
+
+   // configure interrupts
+    if (hw->shifters_dma_channel[SHIFTER_DMA_REQUEST] == 0xff) {
+        DBGPrintf("ILI948x_t4x_p::FlexIO_Config_MultiBeat() - IRQ mode\n");
+        attachInterruptVector(hw->flex_irq, flexio_ISR);
+        NVIC_ENABLE_IRQ(hw->flex_irq);
+        NVIC_SET_PRIORITY(hw->flex_irq, FLEXIO_ISR_PRIORITY);
+        
+        // disable interrupts until later
+        p->SHIFTSIEN &= ~(1 << SHIFTER_IRQ);
+        p->TIMIEN &= ~_flexio_timer_mask;
+
+    } else {
+        p->SHIFTSDEN |= 1U << (SHIFTER_DMA_REQUEST); // enable DMA trigger when shifter status flag is set on shifter SHIFTER_DMA_REQUEST
+    }
     DBGPrintf("ILI948x_t4x_p::FlexIO_Config_MultiBeat() - Exit\n");
 }
 
 FASTRUN void ILI948x_t4x_p::SglBeatWR_nPrm_8(uint32_t const cmd, const uint8_t *value = NULL, uint32_t const length = 0) {
     DBGPrintf("ILI948x_t4x_p::SglBeatWR_nPrm_8(%x, %x, %u\n", cmd, value, length);
-    while (WR_DMATransferDone == false) {
+    while (WR_AsyncTransferDone == false) {
         // Wait for any DMA transfers to complete
     }
 
@@ -1100,7 +1101,7 @@ FASTRUN void ILI948x_t4x_p::SglBeatWR_nPrm_8(uint32_t const cmd, const uint8_t *
 
 FASTRUN void ILI948x_t4x_p::SglBeatWR_nPrm_16(uint32_t const cmd, const uint16_t *value, uint32_t const length) {
     DBGPrintf("ILI948x_t4x_p::SglBeatWR_nPrm_16(%x, %x, %u\n", cmd, value, length);
-    while (WR_DMATransferDone == false) {
+    while (WR_AsyncTransferDone == false) {
         // Wait for any DMA transfers to complete
     }
     FlexIO_Config_SnglBeat();
@@ -1164,8 +1165,8 @@ ILI948x_t4x_p *ILI948x_t4x_p::dmaCallback = nullptr;
 DMAChannel ILI948x_t4x_p::flexDma;
 
 FASTRUN void ILI948x_t4x_p::MulBeatWR_nPrm_DMA(uint32_t const cmd, const void *value, uint32_t const length) {
-    Serial.printf("ILI948x_t4x_p::MulBeatWR_nPrm_DMA(%x, %x, %u\n", cmd, value, length);
-    while (WR_DMATransferDone == false) {
+    DBGPrintf("ILI948x_t4x_p::MulBeatWR_nPrm_DMA(%x, %x, %u\n", cmd, value, length);
+    while (WR_AsyncTransferDone == false) {
         // Wait for any DMA transfers to complete
     }
     uint32_t BeatsPerMinLoop = SHIFTNUM * sizeof(uint32_t) / sizeof(uint8_t); // Number of shifters * number of 8 bit values per shifter
@@ -1266,7 +1267,7 @@ FASTRUN void ILI948x_t4x_p::MulBeatWR_nPrm_DMA(uint32_t const cmd, const void *v
         // Serial.println("Dma setup done");
 
         /* Start data transfer by using DMA */
-        WR_DMATransferDone = false;
+        WR_AsyncTransferDone = false;
         flexDma.attachInterrupt(dmaISR);
 
         dumpDMA_TCD(&flexDma, "ILI948x_t4x_p)\n");
@@ -1359,7 +1360,7 @@ FASTRUN void ILI948x_t4x_p::flexDma_Callback() {
     however, it seems like a waste of time to wait here, since the process otherwise completes in the background and the shifter buffers are ready to receive new data while the transfer completes.
     I think in most applications you could continue without waiting. You can start a new DMA transfer as soon as the first one completes (no need to wait for FlexIO to finish shifting). */
 
-    WR_DMATransferDone = true;
+    WR_AsyncTransferDone = true;
     //    flexDma.disable(); // not necessary because flexDma is already configured to disable on completion
     if (isCB) {
         // Serial.printf("custom callback triggred \n");
@@ -1376,7 +1377,7 @@ void ILI948x_t4x_p::DMAerror() {
 }
 
 void ILI948x_t4x_p::beginWrite16BitColors() {
-    while (WR_DMATransferDone == false) {
+    while (WR_AsyncTransferDone == false) {
         // Wait for any DMA transfers to complete
     }
     DBGPrintf("ILI948x_t4x_p::beginWrite16BitColors() - 0x2c\n");
@@ -1414,7 +1415,7 @@ void ILI948x_t4x_p::endWrite16BitColors() {
 
 //FASTRUN void ILI948x_t4x_p::write16BitColor(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, const uint16_t *pcolors, uint16_t count) {
 FASTRUN void ILI948x_t4x_p::writeRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, const uint16_t *pcolors) {
-    while (WR_DMATransferDone == false) {
+    while (WR_AsyncTransferDone == false) {
         // Wait for any DMA transfers to complete
     }
     uint32_t length = w * h;
@@ -1565,13 +1566,79 @@ void ILI948x_t4x_p::readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, u
     FlexIO_Config_SnglBeat();
 }
 
+ILI948x_t4x_p * ILI948x_t4x_p::IRQcallback = nullptr;
+
+
+FASTRUN void ILI948x_t4x_p::MulBeatWR_nPrm_IRQ(uint32_t const cmd,  const void *value, uint32_t const length) 
+{
+    if (length == 0) return; // bail if no data to output
+
+    DBGPrintf("ILI948x_t4x_p::MulBeatWR_nPrm_IRQ(%x, %p, %u) - entered\n", cmd, value, length);
+  while(WR_AsyncTransferDone == false)
+  {
+    //Wait for any DMA transfers to complete
+  }
+    FlexIO_Config_SnglBeat();
+    CSLow();
+    DCLow();
+
+    /* Write command index */
+    p->SHIFTBUF[_write_shifter] = cmd;
+
+    /*Wait for transfer to be completed */
+    waitTimStat(__LINE__);
+    microSecondDelay();
+    /* De-assert RS pin */
+    DCHigh();
+    microSecondDelay();
+
+
+    FlexIO_Config_MultiBeat();
+    WR_AsyncTransferDone = false;
+    uint32_t bytes = length*2U;
+
+    bursts_to_complete = bytes / BYTES_PER_BURST;
+
+    int remainder = bytes % BYTES_PER_BURST;
+    if (remainder != 0) {
+        memset(finalBurstBuffer, 0, sizeof(finalBurstBuffer));
+        memcpy(finalBurstBuffer, (uint8_t*)value + bytes - remainder, remainder);
+        bursts_to_complete++;
+    }
+
+    bytes_remaining = bytes;
+    readPtr = (uint32_t*)value;
+    DBGPrintf ("arg addr: %x, readPtr addr: %x \n", value, readPtr);
+    DBGPrintf("START::bursts_to_complete: %d bytes_remaining: %d \n", bursts_to_complete, bytes_remaining);
+  
+    uint8_t beats = SHIFTNUM * BEATS_PER_SHIFTER;
+    p->TIMCMP[_flexio_timer] = ((beats * 2U - 1) << 8) | (_baud_div / 2U - 1U);
+
+    p->TIMSTAT = _flexio_timer_mask; // clear timer interrupt signal
+    
+    asm("dsb");
+    
+    IRQcallback = this;
+    // enable interrupts to trigger bursts
+    //print_flexio_debug_data(pFlex, _flexio_timer, _write_shifter, _read_shifter);
+
+//    digitalToggleFast(2);
+    p->TIMIEN |= _flexio_timer_mask;
+    p->SHIFTSIEN |= (1 << SHIFTER_IRQ);
+}
+
+
     // Called by GFX to do updateScreenAsync and new writeRectAsync(;
 bool ILI948x_t4x_p::writeRectAsyncFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *pcolors)
 {
     // Start off only supporting shifters with DMA Requests
-    if (hw->shifters_dma_channel[SHIFTER_DMA_REQUEST] == 0xff) return false;
-
-    pushPixels16bitDMA(pcolors, x, y, x+w-1, y + h - 1);
+    if (hw->shifters_dma_channel[SHIFTER_DMA_REQUEST] != 0xff) {
+        pushPixels16bitDMA(pcolors, x, y, x+w-1, y + h - 1);
+    } else {
+        // FlexIO3 IRQ version.
+        setAddr(x, y, x + w - 1, y + h - 1);
+        MulBeatWR_nPrm_IRQ(ILI9488_RAMWR, pcolors, w * h);
+    }
     return true;
 }
 
@@ -1580,5 +1647,73 @@ bool ILI948x_t4x_p::writeRectAsyncActiveFlexIO() {
     // return the state of last transfer
     // may depend on if the FlexIO shifter supports DMA or not on how
     // we implement this.
-    return WR_DMATransferDone; 
+    return !WR_AsyncTransferDone; 
 }
+
+
+FASTRUN void ILI948x_t4x_p::flexIRQ_Callback(){
+    digitalWriteFast(2, HIGH);
+    DBGPrintf("%x %x %u %u ", p->TIMSTAT, p->SHIFTSTAT, bursts_to_complete, bytes_remaining);
+  
+ if (p->TIMSTAT & _flexio_timer_mask) { // interrupt from end of burst
+        DBGWrite('T');
+        p->TIMSTAT = _flexio_timer_mask; // clear timer interrupt signal
+        bursts_to_complete--;
+        if (bursts_to_complete == 0) {
+            p->TIMIEN &= ~_flexio_timer_mask; // disable timer interrupt
+            asm("dsb");
+            WR_AsyncTransferDone = true;
+            microSecondDelay();
+            CSHigh();
+            _onCompleteCB();
+            digitalWriteFast(2, LOW);
+            DBGPrintf("END\n");
+            return;
+        }
+    }
+
+    if (p->SHIFTSTAT & (1 << SHIFTER_IRQ)) { // interrupt from empty shifter buffer
+        DBGWrite('S');
+        // note, the interrupt signal is cleared automatically when writing data to the shifter buffers
+        if (bytes_remaining == 0) { // just started final burst, no data to load
+            p->SHIFTSIEN &= ~(1 << SHIFTER_IRQ); // disable shifter interrupt signal
+        } else if (bytes_remaining < BYTES_PER_BURST) { // just started second-to-last burst, load data for final burst
+            uint8_t beats = bytes_remaining / BYTES_PER_BEAT;
+            p->TIMCMP[0] = ((beats * 2U - 1) << 8) | (_baud_div / 2U - 1); // takes effect on final burst
+            readPtr = finalBurstBuffer;
+            bytes_remaining = 0;
+            for (int i = SHIFTNUM - 1; i >= 0; i--) {
+                digitalToggleFast(3);
+                uint32_t data = readPtr[i];
+                p->SHIFTBUFBYS[i] = ((data >> 16) & 0xFFFF) | ((data << 16) & 0xFFFF0000);
+
+            }
+        } else {
+            bytes_remaining -= BYTES_PER_BURST;
+            // try filling in reverse order
+            for (int i = SHIFTNUM - 1; i >= 0; i--) {
+                digitalToggleFast(3);
+                uint32_t data = readPtr[i];
+                p->SHIFTBUFBYS[i] = ((data >> 16) & 0xFFFF) | ((data << 16) & 0xFFFF0000);
+
+            }
+            readPtr += SHIFTNUM;
+        }
+        if (bytes_remaining == 0) {
+            DBGWrite('L');
+            p->SHIFTSIEN &= ~(1 << SHIFTER_IRQ);
+        }
+    }
+    DBGWrite('\n');
+    asm("dsb");
+    digitalWriteFast(2, LOW);
+
+}
+
+
+
+FASTRUN void ILI948x_t4x_p::flexio_ISR()
+{
+  asm("dsb");
+  IRQcallback->flexIRQ_Callback();
+ }
