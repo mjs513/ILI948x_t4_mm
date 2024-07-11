@@ -18,9 +18,7 @@
 #define SHIFTNUM 4            // number of shifters used (must be 1, 2, 4, or 8)
 #define SHIFTER_DMA_REQUEST (_write_shifter + SHIFTNUM - 1) // only 0, 1, 2, 3 expected to work
 #define SHIFTER_IRQ (_write_shifter + SHIFTNUM - 1)
-#define BYTES_PER_BEAT (sizeof(uint8_t))
-#define BEATS_PER_SHIFTER (sizeof(uint32_t)/BYTES_PER_BEAT)
-#define BYTES_PER_BURST (sizeof(uint32_t)*SHIFTNUM)
+
 #define FLEXIO_ISR_PRIORITY 64 // interrupt is timing sensitive, so use relatively high priority (supersedes USB)
 
 #define _TFTWIDTH 320  // ILI9488 TFT width in default rotation
@@ -185,6 +183,26 @@ class ILI948x_t4x_p : public Teensy_Parallel_GFX {
     uint16_t _previous_addr_y0 = 0xffff;
     uint16_t _previous_addr_y1 = 0xffff;
 
+    uint16_t generate_output_word(uint8_t data) __attribute__((always_inline)) {
+        #if !defined(ARDUINO_TEENSY40)
+        return data;
+        #else
+        if (_bus_width == 8) return data;
+        return (uint16_t)(data & 0x0F) | (uint16_t)((data & 0xF0) << 2);
+        #endif
+    }
+
+    uint8_t read_shiftbuf_byte() __attribute__((always_inline)) {
+        #if !defined(ARDUINO_TEENSY40)
+        return p->SHIFTBUFBYS[_read_shifter];
+        #else
+        if (_bus_width == 8) return p->SHIFTBUFBYS[_read_shifter];
+        uint16_t data = p->SHIFTBUF[_read_shifter] >> 16; // 10 bits but shifter does 16
+        return ((data >> 2) & 0xf0) | (data & 0xf);
+        #endif
+    }
+
+
     void setAddr(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1)
         __attribute__((always_inline)) {
 
@@ -311,6 +329,7 @@ class ILI948x_t4x_p : public Teensy_Parallel_GFX {
     uint8_t _write_shifter = 0;
     uint8_t _write_shifter_mask = (1 << 0);
     uint8_t _read_shifter = 3;
+    uint8_t _bus_width = 8;
     uint8_t _read_shifter_mask = (1 << 3);
     uint8_t _flexio_timer = 0;
     uint8_t _flexio_timer_mask = 1 << 0;
@@ -352,7 +371,6 @@ class ILI948x_t4x_p : public Teensy_Parallel_GFX {
     static void flexio_ISR();
     void flexIRQ_Callback();
 
-
     void microSecondDelay();
 
     static void dmaISR();
@@ -365,9 +383,11 @@ class ILI948x_t4x_p : public Teensy_Parallel_GFX {
     static ILI948x_t4x_p *dmaCallback;
 
     /* variables used by ISR */
-    volatile uint32_t bytes_remaining;
-    volatile unsigned int bursts_to_complete;
-    volatile uint32_t *readPtr;
+    volatile uint32_t _irq_bytes_remaining;
+    volatile unsigned int _irq_bursts_to_complete;
+    volatile uint32_t *_irq_readPtr;
+    uint8_t  _irq_bytes_per_shifter;
+    uint16_t _irq_bytes_per_burst;
     uint32_t finalBurstBuffer[SHIFTNUM];
 
 };

@@ -22,7 +22,7 @@
 #elif defined(ARDUINO_TEENSY_MICROMOD)
 #define ILI948X ILI9486
 #define ILI948X_SPEED_MHX 12
-#elif defined(ARDUINO_TEENSY41)
+#elif defined(ARDUINO_TEENSY41) || defined(ARDUINO_TEENSY40)
 #define ILI948X ILI9488
 #define ILI948X_SPEED_MHX 24
 #endif
@@ -59,6 +59,8 @@ uint8_t use_fb = 0;
 
 #ifdef ARDUINO_TEENSY41
 ILI948x_t4x_p tft = ILI948x_t4x_p(10, 8, 9);  //(dc, cs, rst)
+#elif ARDUINO_TEENSY40
+ILI948x_t4x_p tft = ILI948x_t4x_p(0, 1, 2);  //(dc, cs, rst)
 #elif defined(ARDUINO_TEENSY_DEVBRD4)
 ILI948x_t4x_p tft = ILI948x_t4x_p(10, 11, 12);  //(dc, cs, rst)
 #else
@@ -127,8 +129,13 @@ void setup() {
 
     //
     //  button.initButton(&tft, 200, 125, 100, 40, ILI9488_GREEN, ILI9488_YELLOW, ILI9488_RED, "UP", 1, 1);
+    tft.onCompleteCB(&frame_complete_callback);
 
     drawTestScreen();
+}
+
+void frame_complete_callback() {
+    Serial.println("\n*** Frame Complete Callback ***");
 }
 
 void SetupOrClearClipRectAndOffsets() {
@@ -475,7 +482,7 @@ void drawTestScreen() {
                   ILI9488_RED, ILI9488_GREEN, ILI9488_BLUE, ILI9488_BLACK, ILI9488_WHITE, ILI9488_YELLOW, ILI9488_CYAN, ILI9488_PINK);
     MemoryHexDump(Serial, pixel_data, BAND_WIDTH * 8 * 2, true, "\nColor bars:\n");
 
-    tft.writeRect(BAND_START_X, BAND_START_Y + BAND_HEIGHT, BAND_WIDTH * 8, BAND_HEIGHT, pixel_data);
+    tft.writeRect(BAND_START_X, BAND_START_Y + BAND_HEIGHT + 3, BAND_WIDTH * 8, BAND_HEIGHT, pixel_data);
     //WaitForUserInput();
 
     tft.readRect(0, 0, 50, 50, pixel_data);

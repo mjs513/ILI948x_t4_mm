@@ -617,12 +617,20 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Init() {
 
     DBGPrintf("\tFlex:%p port:%p hw:%p\n", pFlex, p, hw);
 
-    // lets dos some quick validation of the pins.
+    // lets do some quick validation of the pins.
+    // BUGBUG: nibble mode sort of hard coded pin wise..
+    _bus_width = 8;
+    uint8_t previous_flexio_pin = _flexio_D0;
     for (uint8_t i = 1; i < 8; i++) {
         uint8_t flexio_pin = pFlex->mapIOPinToFlexPin(_data_pins[i]);
-        if (flexio_pin != (_flexio_D0 + i)) {
+        if (flexio_pin != (previous_flexio_pin + 1)) {
+            if ((i == 4) && (flexio_pin != 0xff)) {
+                DBGPrintf("\tNibble Mode: D4(%u): %u\n", _data_pins[4], flexio_pin);
+                _bus_width = 10;
+            }
             Serial.printf("ILI948x_t4x_p::FlexIO_Ini - Flex IO Data pins pin issue D0(%u), D%u(%u)\n", _flexio_D0, i, flexio_pin);
         }
+        previous_flexio_pin = flexio_pin;
     }
 
     // Lets reserve the timer and shifters.
@@ -725,7 +733,7 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Config_SnglBeat_Read() {
         // FLEXIO_SHIFTCFG_INSRC                                                  /* Shifter input */
         FLEXIO_SHIFTCFG_SSTOP(0)     /* Shifter stop bit disabled */
         | FLEXIO_SHIFTCFG_SSTART(0)  /* Shifter start bit disabled and loading data on enabled */
-        | FLEXIO_SHIFTCFG_PWIDTH(7); /* Bus width */
+        | FLEXIO_SHIFTCFG_PWIDTH(_bus_width - 1); /* Bus width */
 
     p->SHIFTCTL[_read_shifter] =
         FLEXIO_SHIFTCTL_TIMSEL(_flexio_timer)        /* Shifter's assigned timer index */
@@ -778,7 +786,7 @@ FASTRUN uint8_t ILI948x_t4x_p::readCommand(uint8_t const cmd) {
     DCLow();
 
     /* Write command index */
-    p->SHIFTBUF[_write_shifter] = cmd;
+    p->SHIFTBUF[_write_shifter] = generate_output_word(cmd);
 
     /*Wait for transfer to be completed */
     waitWriteShiftStat(__LINE__);
@@ -796,11 +804,11 @@ FASTRUN uint8_t ILI948x_t4x_p::readCommand(uint8_t const cmd) {
 
     waitReadShiftStat(__LINE__);
     // digitalToggleFast(2);
-    dummy = p->SHIFTBUFBYS[_read_shifter];
+    dummy = read_shiftbuf_byte();
 
     waitReadShiftStat(__LINE__);
     // digitalToggleFast(2);
-    data = p->SHIFTBUFBYS[_read_shifter];
+    data = read_shiftbuf_byte();
 
     CSHigh();
     microSecondDelay();
@@ -822,7 +830,7 @@ FASTRUN uint32_t ILI948x_t4x_p::readCommandN(uint8_t const cmd, uint8_t count_by
     DCLow();
 
     /* Write command index */
-    p->SHIFTBUF[_write_shifter] = cmd;
+    p->SHIFTBUF[_write_shifter] = generate_output_word(cmd);
 
     /*Wait for transfer to be completed */
     waitWriteShiftStat(__LINE__);
@@ -840,11 +848,11 @@ FASTRUN uint32_t ILI948x_t4x_p::readCommandN(uint8_t const cmd, uint8_t count_by
 
     waitReadShiftStat(__LINE__);
     // digitalToggleFast(2);
-    dummy = p->SHIFTBUFBYS[_read_shifter];
+    dummy = read_shiftbuf_byte();
 
     while (count_bytes--) {
         waitReadShiftStat(__LINE__);
-        data = (data << 8) | (p->SHIFTBUFBYS[_read_shifter] & 0xff);
+        data = (data << 8) | read_shiftbuf_byte();
         // digitalToggleFast(2);
     }
     // Serial.printf("Dummy 0x%x, data 0x%x\n", dummy, data);
@@ -902,7 +910,7 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Config_SnglBeat() {
         FLEXIO_SHIFTCFG_INSRC * (1)  /* Shifter input */
         | FLEXIO_SHIFTCFG_SSTOP(0)   /* Shifter stop bit disabled */
         | FLEXIO_SHIFTCFG_SSTART(0)  /* Shifter start bit disabled and loading data on enabled */
-        | FLEXIO_SHIFTCFG_PWIDTH(7); /* Bus width */
+        | FLEXIO_SHIFTCFG_PWIDTH(_bus_width - 1); /* Bus width */
 
     p->SHIFTCTL[_write_shifter] =
         FLEXIO_SHIFTCTL_TIMSEL(_flexio_timer) /* Shifter's assigned timer index */
@@ -979,6 +987,8 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Config_MultiBeat() {
 
     uint32_t i;
     uint8_t MulBeatWR_BeatQty = SHIFTNUM * sizeof(uint32_t) / sizeof(uint8_t); // Number of beats = number of shifters * beats per shifter
+    if (_bus_width > 8)  MulBeatWR_BeatQty = MulBeatWR_BeatQty / 2;            // we use 16 bits at a time for T4...
+
     /* Disable and reset FlexIO */
     p->CTRL &= ~FLEXIO_CTRL_FLEXEN;
     // p->CTRL |= FLEXIO_CTRL_SWRST;
@@ -991,7 +1001,7 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Config_MultiBeat() {
             FLEXIO_SHIFTCFG_INSRC * (1U)       /* Shifter input from next shifter's output */
             | FLEXIO_SHIFTCFG_SSTOP(0U)        /* Shifter stop bit disabled */
             | FLEXIO_SHIFTCFG_SSTART(0U)       /* Shifter start bit disabled and loading data on enabled */
-            | FLEXIO_SHIFTCFG_PWIDTH(8U - 1U); /* 8 bit shift width */
+            | FLEXIO_SHIFTCFG_PWIDTH(_bus_width - 1); /* 8 bit shift width */
     }
 
     p->SHIFTCTL[_write_shifter] =
@@ -1075,7 +1085,7 @@ FASTRUN void ILI948x_t4x_p::SglBeatWR_nPrm_8(uint32_t const cmd, const uint8_t *
     DCLow();
 
     /* Write command index */
-    p->SHIFTBUF[_write_shifter] = cmd;
+    p->SHIFTBUF[_write_shifter] = generate_output_word(cmd);
 
     /*Wait for transfer to be completed */
     waitWriteShiftStat(__LINE__);
@@ -1089,7 +1099,7 @@ FASTRUN void ILI948x_t4x_p::SglBeatWR_nPrm_8(uint32_t const cmd, const uint8_t *
 
     if (length) {
         for (i = 0; i < length; i++) {
-            p->SHIFTBUF[_write_shifter] = *value++;
+            p->SHIFTBUF[_write_shifter] = generate_output_word(*value++);
             waitWriteShiftStat(__LINE__);
         }
         waitTimStat(__LINE__);
@@ -1112,7 +1122,7 @@ FASTRUN void ILI948x_t4x_p::SglBeatWR_nPrm_16(uint32_t const cmd, const uint16_t
     // microSecondDelay();
 
     /* Write command index */
-    p->SHIFTBUF[_write_shifter] = cmd;
+    p->SHIFTBUF[_write_shifter] = generate_output_word(cmd);
 
     /*Wait for transfer to be completed */
     waitTimStat(__LINE__);
@@ -1125,20 +1135,20 @@ FASTRUN void ILI948x_t4x_p::SglBeatWR_nPrm_16(uint32_t const cmd, const uint16_t
         for (uint32_t i = 0; i < length - 1U; i++) {
             buf = *value++;
             waitWriteShiftStat(__LINE__);
-            p->SHIFTBUF[_write_shifter] = buf >> 8;
+            p->SHIFTBUF[_write_shifter] = generate_output_word(buf >> 8);
 
             waitWriteShiftStat(__LINE__);
-            p->SHIFTBUF[_write_shifter] = buf & 0xFF;
+            p->SHIFTBUF[_write_shifter] = generate_output_word(buf & 0xFF);
         }
         buf = *value++;
         /* Write the last byte */
         waitWriteShiftStat(__LINE__);
-        p->SHIFTBUF[_write_shifter] = buf >> 8;
+        p->SHIFTBUF[_write_shifter] = generate_output_word(buf >> 8);
 
         waitWriteShiftStat(__LINE__);
         p->TIMSTAT |= _flexio_timer_mask;
 
-        p->SHIFTBUF[_write_shifter] = buf & 0xFF;
+        p->SHIFTBUF[_write_shifter] = generate_output_word(buf & 0xFF);
 
         /*Wait for transfer to be completed */
         waitTimStat();
@@ -1178,7 +1188,7 @@ FASTRUN void ILI948x_t4x_p::MulBeatWR_nPrm_DMA(uint32_t const cmd, const void *v
     DCLow();
 
     /* Write command index */
-    p->SHIFTBUF[_write_shifter] = cmd;
+    p->SHIFTBUF[_write_shifter] = generate_output_word(cmd);
 
     /*Wait for transfer to be completed */
 
@@ -1195,10 +1205,10 @@ FASTRUN void ILI948x_t4x_p::MulBeatWR_nPrm_DMA(uint32_t const cmd, const void *v
         for (uint32_t i = 0; i < length; i++) {
             buf = *newValue++;
             waitWriteShiftStat(__LINE__);
-            p->SHIFTBUF[_write_shifter] = buf >> 8;
+            p->SHIFTBUF[_write_shifter] = generate_output_word(buf >> 8);
 
             waitWriteShiftStat(__LINE__);
-            p->SHIFTBUF[_write_shifter] = buf & 0xFF;
+            p->SHIFTBUF[_write_shifter] = generate_output_word(buf & 0xFF);
         }
         // Wait for transfer to be completed
         while (0 == (p->TIMSTAT & _flexio_timer_mask)) {
@@ -1326,10 +1336,10 @@ FASTRUN void ILI948x_t4x_p::flexDma_Callback() {
         for (uint32_t i = 0; i < (MulBeatCountRemain); i++) {
             value = *MulBeatDataRemain++;
             waitWriteShiftStat(__LINE__);
-            p->SHIFTBUF[_write_shifter] = value >> 8;
+            p->SHIFTBUF[_write_shifter] = generate_output_word(value >> 8);
 
             waitWriteShiftStat(__LINE__);
-            p->SHIFTBUF[_write_shifter] = value & 0xFF;
+            p->SHIFTBUF[_write_shifter] = generate_output_word(value & 0xFF);
         }
         p->TIMSTAT |= _flexio_timer_mask;
         /*
@@ -1339,14 +1349,14 @@ FASTRUN void ILI948x_t4x_p::flexDma_Callback() {
         while(0 == (p->SHIFTSTAT & _flexio_timer_mask))
             {
             }
-        p->SHIFTBUF[_write_shifter] = value >> 8;
+        p->SHIFTBUF[_write_shifter] = generate_output_word(value >> 8);
 
         while(0 == (p->SHIFTSTAT & _flexio_timer_mask))
         {
         }
         p->TIMSTAT |= _flexio_timer_mask;
 
-        p->SHIFTBUF[_write_shifter] = value & 0xFF;
+        p->SHIFTBUF[_write_shifter] = generate_output_word(value & 0xFF);
         */
         /*Wait for transfer to be completed */
         waitTimStat();
@@ -1388,7 +1398,7 @@ void ILI948x_t4x_p::beginWrite16BitColors() {
     // microSecondDelay();
 
     /* Write command index */
-    p->SHIFTBUF[_write_shifter] = ILI9488_RAMWR;
+    p->SHIFTBUF[_write_shifter] = generate_output_word(ILI9488_RAMWR);
 
     /*Wait for transfer to be completed */
     waitTimStat(__LINE__);
@@ -1400,10 +1410,10 @@ void ILI948x_t4x_p::beginWrite16BitColors() {
 
 void ILI948x_t4x_p::write16BitColor(uint16_t color) {
     waitWriteShiftStat(__LINE__);
-    p->SHIFTBUF[_write_shifter] = color >> 8;
+    p->SHIFTBUF[_write_shifter] = generate_output_word(color >> 8);
 
     waitWriteShiftStat(__LINE__);
-    p->SHIFTBUF[_write_shifter] = color & 0xFF;
+    p->SHIFTBUF[_write_shifter] = generate_output_word(color & 0xFF);
 }
 
 void ILI948x_t4x_p::endWrite16BitColors() {
@@ -1439,7 +1449,7 @@ void ILI948x_t4x_p::fillRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, u
     // microSecondDelay();
 
     /* Write command index */
-    p->SHIFTBUF[_write_shifter] = ILI9488_RAMWR;
+    p->SHIFTBUF[_write_shifter] = generate_output_word(ILI9488_RAMWR);
 
     /*Wait for transfer to be completed */
     waitTimStat(__LINE__);
@@ -1449,19 +1459,19 @@ void ILI948x_t4x_p::fillRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, u
     microSecondDelay();
     while (length-- > 1) {
         waitWriteShiftStat(__LINE__);
-        p->SHIFTBUF[_write_shifter] = color >> 8;
+        p->SHIFTBUF[_write_shifter] = generate_output_word(color >> 8);
 
         waitWriteShiftStat(__LINE__);
-        p->SHIFTBUF[_write_shifter] = color & 0xFF;
+        p->SHIFTBUF[_write_shifter] = generate_output_word(color & 0xFF);
     }
     /* Write the last pixel */
     waitWriteShiftStat(__LINE__);
-    p->SHIFTBUF[_write_shifter] = color >> 8;
+    p->SHIFTBUF[_write_shifter] = generate_output_word(color >> 8);
 
     waitWriteShiftStat(__LINE__);
     p->TIMSTAT |= _flexio_timer_mask;
 
-    p->SHIFTBUF[_write_shifter] = color & 0xFF;
+    p->SHIFTBUF[_write_shifter] = generate_output_word(color & 0xFF);
 
     /*Wait for transfer to be completed */
     waitTimStat(__LINE__);
@@ -1500,7 +1510,7 @@ void ILI948x_t4x_p::readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, u
 
     /* Write command index */
     DBGPrintf("\tOutput ILI9488_RAMRD\n");
-    p->SHIFTBUF[_write_shifter] = ILI9488_RAMRD;
+    p->SHIFTBUF[_write_shifter] = generate_output_word(ILI9488_RAMRD);
 
     /*Wait for transfer to be completed */
     waitTimStat(__LINE__);
@@ -1521,7 +1531,7 @@ void ILI948x_t4x_p::readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, u
     for (uint8_t i = 0; i < DUMMY_COUNT; i++) {
         // read in dummy bytes
         waitReadShiftStat(__LINE__);
-        dummy = p->SHIFTBUFBYS[_read_shifter];
+        dummy = read_shiftbuf_byte();
         // digitalToggleFast(2);
         // Serial.printf("\tD%u=%x\n", i, dummy);
     }
@@ -1533,11 +1543,11 @@ void ILI948x_t4x_p::readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, u
         while (count_pixels--) {
             waitReadShiftStat(__LINE__);
             // digitalToggleFast(2);
-            uint8_t b1 = (p->SHIFTBUFBYS[_read_shifter] & 0xff);
+            uint8_t b1 = read_shiftbuf_byte();
 
             waitReadShiftStat(__LINE__);
             // digitalToggleFast(2);
-            *pc++ = (p->SHIFTBUFBYS[_read_shifter] & 0xff);
+            *pc++ = read_shiftbuf_byte();
             *pc++ = b1;
         }
     } else {
@@ -1546,15 +1556,15 @@ void ILI948x_t4x_p::readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, u
             uint8_t r, g, b;
             waitReadShiftStat(__LINE__);
             // digitalToggleFast(2);
-            r = (p->SHIFTBUFBYS[_read_shifter] & 0xff);
+            r = read_shiftbuf_byte();
 
             waitReadShiftStat(__LINE__);
             // digitalToggleFast(2);
-            g = (p->SHIFTBUFBYS[_read_shifter] & 0xff);
+            g = read_shiftbuf_byte();
 
             waitReadShiftStat(__LINE__);
             // digitalToggleFast(2);
-            b = (p->SHIFTBUFBYS[_read_shifter] & 0xff);
+            b = read_shiftbuf_byte();
 
             *pcolors++ = color565(r, g, b);
         }
@@ -1566,69 +1576,12 @@ void ILI948x_t4x_p::readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, u
     FlexIO_Config_SnglBeat();
 }
 
-ILI948x_t4x_p * ILI948x_t4x_p::IRQcallback = nullptr;
 
 
-FASTRUN void ILI948x_t4x_p::MulBeatWR_nPrm_IRQ(uint32_t const cmd,  const void *value, uint32_t const length) 
-{
-    if (length == 0) return; // bail if no data to output
-
-    DBGPrintf("ILI948x_t4x_p::MulBeatWR_nPrm_IRQ(%x, %p, %u) - entered\n", cmd, value, length);
-  while(WR_AsyncTransferDone == false)
-  {
-    //Wait for any DMA transfers to complete
-  }
-    FlexIO_Config_SnglBeat();
-    CSLow();
-    DCLow();
-
-    /* Write command index */
-    p->SHIFTBUF[_write_shifter] = cmd;
-
-    /*Wait for transfer to be completed */
-    waitTimStat(__LINE__);
-    microSecondDelay();
-    /* De-assert RS pin */
-    DCHigh();
-    microSecondDelay();
-
-
-    FlexIO_Config_MultiBeat();
-    WR_AsyncTransferDone = false;
-    uint32_t bytes = length*2U;
-
-    bursts_to_complete = bytes / BYTES_PER_BURST;
-
-    int remainder = bytes % BYTES_PER_BURST;
-    if (remainder != 0) {
-        memset(finalBurstBuffer, 0, sizeof(finalBurstBuffer));
-        memcpy(finalBurstBuffer, (uint8_t*)value + bytes - remainder, remainder);
-        bursts_to_complete++;
-    }
-
-    bytes_remaining = bytes;
-    readPtr = (uint32_t*)value;
-    DBGPrintf ("arg addr: %x, readPtr addr: %x \n", value, readPtr);
-    DBGPrintf("START::bursts_to_complete: %d bytes_remaining: %d \n", bursts_to_complete, bytes_remaining);
-  
-    uint8_t beats = SHIFTNUM * BEATS_PER_SHIFTER;
-    p->TIMCMP[_flexio_timer] = ((beats * 2U - 1) << 8) | (_baud_div / 2U - 1U);
-
-    p->TIMSTAT = _flexio_timer_mask; // clear timer interrupt signal
-    
-    asm("dsb");
-    
-    IRQcallback = this;
-    // enable interrupts to trigger bursts
-    //print_flexio_debug_data(pFlex, _flexio_timer, _write_shifter, _read_shifter);
-
-//    digitalToggleFast(2);
-    p->TIMIEN |= _flexio_timer_mask;
-    p->SHIFTSIEN |= (1 << SHIFTER_IRQ);
-}
-
-
-    // Called by GFX to do updateScreenAsync and new writeRectAsync(;
+//=============================================================================
+// Main Async interface
+//      Called by GFX to do updateScreenAsync and new writeRectAsync(;
+//=============================================================================
 bool ILI948x_t4x_p::writeRectAsyncFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *pcolors)
 {
     // Start off only supporting shifters with DMA Requests
@@ -1651,22 +1604,95 @@ bool ILI948x_t4x_p::writeRectAsyncActiveFlexIO() {
 }
 
 
+//=============================================================================
+// ASYNC - Done BY IRQ - mainly for FlexIO3
+//=============================================================================
+//#define BEATS_PER_SHIFTER (sizeof(uint32_t)/sizeof(uint8_t))
+//#define BYTES_PER_BURST (BEATS_PER_SHIFTER*SHIFTNUM)
+
+
+ILI948x_t4x_p * ILI948x_t4x_p::IRQcallback = nullptr;
+
+
+FASTRUN void ILI948x_t4x_p::MulBeatWR_nPrm_IRQ(uint32_t const cmd,  const void *value, uint32_t const length) 
+{
+    if (length == 0) return; // bail if no data to output
+
+    DBGPrintf("ILI948x_t4x_p::MulBeatWR_nPrm_IRQ(%x, %p, %u) - entered\n", cmd, value, length);
+  while(WR_AsyncTransferDone == false)
+  {
+    //Wait for any DMA transfers to complete
+  }
+    FlexIO_Config_SnglBeat();
+    CSLow();
+    DCLow();
+
+    /* Write command index */
+    p->SHIFTBUF[_write_shifter] = generate_output_word(cmd);
+
+    /*Wait for transfer to be completed */
+    waitTimStat(__LINE__);
+    microSecondDelay();
+    /* De-assert RS pin */
+    DCHigh();
+    microSecondDelay();
+
+
+    FlexIO_Config_MultiBeat();
+    WR_AsyncTransferDone = false;
+    uint32_t bytes = length*2U;
+
+    _irq_bytes_per_shifter = (_bus_width <= 8) ? 4 : 2;
+    _irq_bytes_per_burst = _irq_bytes_per_shifter * SHIFTNUM;
+
+    _irq_bursts_to_complete = bytes / _irq_bytes_per_burst;
+
+    int remainder = bytes % _irq_bytes_per_burst;
+    if (remainder != 0) {
+        memset(finalBurstBuffer, 0, sizeof(finalBurstBuffer));
+        memcpy(finalBurstBuffer, (uint8_t*)value + bytes - remainder, remainder);
+        _irq_bursts_to_complete++;
+    }
+
+    _irq_bytes_remaining = bytes;
+    _irq_readPtr = (uint32_t*)value;
+    DBGPrintf("arg addr: %x, _irq_readPtr addr: %x \n", value, _irq_readPtr);
+    DBGPrintf("bytes per shifter: %u per burst:%u ", _irq_bytes_per_shifter, _irq_bytes_per_burst);
+    DBGPrintf("START::_irq_bursts_to_complete: %d _irq_bytes_remaining: %d remainder:%u\n", _irq_bursts_to_complete, _irq_bytes_remaining, remainder);
+  
+    uint8_t beats = SHIFTNUM * _irq_bytes_per_shifter;
+    p->TIMCMP[_flexio_timer] = ((beats * 2U - 1) << 8) | (_baud_div / 2U - 1U);
+
+    p->TIMSTAT = _flexio_timer_mask; // clear timer interrupt signal
+    
+    asm("dsb");
+    
+    IRQcallback = this;
+    // enable interrupts to trigger bursts
+    //print_flexio_debug_data(pFlex, _flexio_timer, _write_shifter, _read_shifter);
+
+//    digitalToggleFast(2);
+    p->TIMIEN |= _flexio_timer_mask;
+    p->SHIFTSIEN |= (1 << SHIFTER_IRQ);
+}
+
 FASTRUN void ILI948x_t4x_p::flexIRQ_Callback(){
-    digitalWriteFast(2, HIGH);
-    DBGPrintf("%x %x %u %u ", p->TIMSTAT, p->SHIFTSTAT, bursts_to_complete, bytes_remaining);
+    //digitalWriteFast(2, HIGH);
+    DBGPrintf("%x %x %u %u ", p->TIMSTAT, p->SHIFTSTAT, _irq_bursts_to_complete, _irq_bytes_remaining);
   
  if (p->TIMSTAT & _flexio_timer_mask) { // interrupt from end of burst
         DBGWrite('T');
         p->TIMSTAT = _flexio_timer_mask; // clear timer interrupt signal
-        bursts_to_complete--;
-        if (bursts_to_complete == 0) {
+        _irq_bursts_to_complete--;
+        //if (_irq_bytes_remaining < 32) Serial.printf("T:%u %u\n", _irq_bursts_to_complete, _irq_bytes_remaining);
+        if ((_irq_bursts_to_complete == 0) || (_irq_bytes_remaining == 0)) {
             p->TIMIEN &= ~_flexio_timer_mask; // disable timer interrupt
             asm("dsb");
             WR_AsyncTransferDone = true;
             microSecondDelay();
             CSHigh();
             _onCompleteCB();
-            digitalWriteFast(2, LOW);
+            //digitalWriteFast(2, LOW);
             DBGPrintf("END\n");
             return;
         }
@@ -1675,38 +1701,53 @@ FASTRUN void ILI948x_t4x_p::flexIRQ_Callback(){
     if (p->SHIFTSTAT & (1 << SHIFTER_IRQ)) { // interrupt from empty shifter buffer
         DBGWrite('S');
         // note, the interrupt signal is cleared automatically when writing data to the shifter buffers
-        if (bytes_remaining == 0) { // just started final burst, no data to load
+        if (_irq_bytes_remaining == 0) { // just started final burst, no data to load
             p->SHIFTSIEN &= ~(1 << SHIFTER_IRQ); // disable shifter interrupt signal
-        } else if (bytes_remaining < BYTES_PER_BURST) { // just started second-to-last burst, load data for final burst
-            uint8_t beats = bytes_remaining / BYTES_PER_BEAT;
-            p->TIMCMP[0] = ((beats * 2U - 1) << 8) | (_baud_div / 2U - 1); // takes effect on final burst
-            readPtr = finalBurstBuffer;
-            bytes_remaining = 0;
-            for (int i = SHIFTNUM - 1; i >= 0; i--) {
-                digitalToggleFast(3);
-                uint32_t data = readPtr[i];
-                p->SHIFTBUFBYS[i] = ((data >> 16) & 0xFFFF) | ((data << 16) & 0xFFFF0000);
-
+        } else if (_irq_bytes_remaining < _irq_bytes_per_burst) { // just started second-to-last burst, load data for final burst
+            p->TIMCMP[0] = ((_irq_bytes_remaining * 2U - 1) << 8) | (_baud_div / 2U - 1); // takes effect on final burst
+            _irq_readPtr = finalBurstBuffer;
+            _irq_bytes_remaining = 0;
+            if (_bus_width == 8) {
+                for (int i = SHIFTNUM - 1; i >= 0; i--) {
+                    //digitalToggleFast(3);
+                    uint32_t data = _irq_readPtr[i];
+                    p->SHIFTBUFBYS[i] = ((data >> 16) & 0xFFFF) | ((data << 16) & 0xFFFF0000);
+                }
+            } else {
+                uint8_t *pb = (uint8_t*)_irq_readPtr;
+                for (int i = SHIFTNUM - 1; i >= 0; i--) {
+                    //digitalToggleFast(3);
+                    p->SHIFTBUF[i] = (uint32_t)(generate_output_word(pb[2 * i]) << 16) | (uint32_t)(generate_output_word(pb[i * 2 + 1]) << 0);
+                }
             }
         } else {
-            bytes_remaining -= BYTES_PER_BURST;
+            _irq_bytes_remaining -= _irq_bytes_per_burst;
             // try filling in reverse order
-            for (int i = SHIFTNUM - 1; i >= 0; i--) {
-                digitalToggleFast(3);
-                uint32_t data = readPtr[i];
-                p->SHIFTBUFBYS[i] = ((data >> 16) & 0xFFFF) | ((data << 16) & 0xFFFF0000);
-
+            if (_bus_width == 8) {
+                for (int i = SHIFTNUM - 1; i >= 0; i--) {
+                    //digitalToggleFast(3);
+                    uint32_t data = _irq_readPtr[i];
+                    p->SHIFTBUFBYS[i] = ((data >> 16) & 0xFFFF) | ((data << 16) & 0xFFFF0000);
+                }
+                _irq_readPtr += SHIFTNUM;
+            } else {
+                uint8_t *pb = (uint8_t*)_irq_readPtr;
+                for (int i = SHIFTNUM - 1; i >= 0; i--) {
+                    //digitalToggleFast(3);
+                    p->SHIFTBUF[i] = (uint32_t)(generate_output_word(pb[2 * i]) << 16) | (uint32_t)(generate_output_word(pb[i * 2 + 1]) << 0);
+                }
+                pb += (2 * SHIFTNUM);
+                _irq_readPtr = (uint32_t*)pb; 
             }
-            readPtr += SHIFTNUM;
         }
-        if (bytes_remaining == 0) {
-            DBGWrite('L');
+        if (_irq_bytes_remaining == 0) {
+            Serial.println("RM==0");
             p->SHIFTSIEN &= ~(1 << SHIFTER_IRQ);
         }
     }
     DBGWrite('\n');
     asm("dsb");
-    digitalWriteFast(2, LOW);
+    //digitalWriteFast(2, LOW);
 
 }
 
