@@ -15,7 +15,7 @@
 #ifdef ARDUINO_TEENSY_MICROMOD
 #define ILI948X ILI9486
 #define ILI948X_SPEED_MHX 24
-#elif defined(ARDUINO_TEENSY41)
+#elif defined(ARDUINO_TEENSY41) || defined(ARDUINO_TEENSY40)
 #define ILI948X ILI9488
 #define ILI948X_SPEED_MHX 24
 #endif
@@ -71,6 +71,8 @@ const ili_fonts_test_t font_test_list[] = {
 
 #ifdef ARDUINO_TEENSY41
 ILI948x_t4x_p tft = ILI948x_t4x_p(10, 8, 9);  //(dc, cs, rst)
+#elif ARDUINO_TEENSY40
+ILI948x_t4x_p tft = ILI948x_t4x_p(0, 1, 2);  //(dc, cs, rst)
 #else
 ILI948x_t4x_p tft = ILI948x_t4x_p(4, 5, 3);  //(dc, cs, rst)
 #endif

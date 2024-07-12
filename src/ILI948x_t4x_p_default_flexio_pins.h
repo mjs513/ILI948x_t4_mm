@@ -17,6 +17,20 @@
 #define DISPLAY_D6 17
 #define DISPLAY_D7 16
 
+#elif defined(ARDUINO_TEENSY40)
+// BUGBUG Nibble mode
+#define DISPLAY_RD 20	// FlexIO3:10: RD
+#define DISPLAY_WR 21	// FlexIO3:11 WR
+
+#define DISPLAY_D0 19	 // FlexIO3:0 D0
+#define DISPLAY_D1 18	 // FlexIO3:1 |
+#define DISPLAY_D2 14	 // FlexIO3:2 |
+#define DISPLAY_D3 15	 // FlexIO3:3 |
+#define DISPLAY_D4 17	 // FlexIO3:6 |
+#define DISPLAY_D5 16	 // FlexIO3:7 |
+#define DISPLAY_D6 22	 // FlexIO3:8 |
+#define DISPLAY_D7 23	 // FlexIO3:9 D7
+
 #else // #if defined(ARDUINO_TEENSY_MICROMOD)
 // FLEXIO2 pins.
 
