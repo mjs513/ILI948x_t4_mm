@@ -122,7 +122,8 @@ enum {
     ILI9486 = 1,
     ILI9486_1 = 2,
     ILI9486_2 = 3,
-    R61529 = 4
+    R61529 = 4,
+    HX8357D = 5
 };
 
 #ifdef __cplusplus

@@ -7,7 +7,7 @@
 #endif
 
 //#define DEBUG
-//#define DEBUG_VERBOSE
+#define DEBUG_VERBOSE
 
 #ifndef DEBUG
 #undef DEBUG_VERBOSE
@@ -130,6 +130,99 @@ PROGMEM const uint8_t R61519_init_commands[] = {
     5, 120, 0x2B, 0x00, 0x00, 0x01, 0xDF,
     1, 120, 0x29,
     0};
+#define HX8357_NOP     0x00
+#define HX8357_SWRESET 0x01
+#define HX8357_RDDID   0x04
+#define HX8357_RDDST   0x09
+
+#define HX8357_SLPIN   0x10
+#define HX8357_SLPOUT  0x11
+#define HX8357B_PTLON   0x12
+#define HX8357B_NORON   0x13
+
+#define HX8357_RDMODE  0x0A
+#define HX8357_RDMADCTL  0x0B
+#define HX8357_RDPIXFMT  0x0C
+#define HX8357_RDIMGFMT  0x0D
+#define HX8357_RDSELFDIAG  0x0F
+
+#define HX8357_INVOFF  0x20
+#define HX8357_INVON   0x21
+#define HX8357_GAMMASET 0x26
+#define HX8357_DISPOFF 0x28
+#define HX8357_DISPON  0x29
+
+#define HX8357_CASET   0x2A
+#define HX8357_PASET   0x2B
+#define HX8357_RAMWR   0x2C
+#define HX8357_RAMRD   0x2E
+
+#define HX8357B_PTLAR    0x30
+#define HX8357_TEON  0x35
+#define HX8357_TEARLINE  0x44
+#define HX8357_MADCTL   0x36
+#define HX8357_VSCRSADD 0x37
+#define HX8357_COLMOD  0x3A
+
+#define HX8357_SETOSC 0xB0
+#define HX8357_SETPWR1 0xB1
+#define HX8357B_SETDISPLAY 0xB2
+#define HX8357_SETRGB 0xB3
+#define HX8357D_SETCOM  0xB6
+
+#define HX8357B_SETDISPMODE  0xB4
+#define HX8357D_SETCYC  0xB4
+#define HX8357B_SETOTP 0xB7
+#define HX8357D_SETC 0xB9
+
+#define HX8357B_SET_PANEL_DRIVING 0xC0
+#define HX8357D_SETSTBA 0xC0
+#define HX8357B_SETDGC  0xC1
+#define HX8357B_SETID  0xC3
+#define HX8357B_SETDDB  0xC4
+#define HX8357B_SETDISPLAYFRAME 0xC5
+#define HX8357B_GAMMASET 0xC8
+#define HX8357B_SETCABC  0xC9
+#define HX8357_SETPANEL  0xCC
+
+#define HX8357B_SETPOWER 0xD0
+#define HX8357B_SETVCOM 0xD1
+#define HX8357B_SETPWRNORMAL 0xD2
+
+#define HX8357B_RDID1   0xDA
+#define HX8357B_RDID2   0xDB
+#define HX8357B_RDID3   0xDC
+#define HX8357B_RDID4   0xDD
+
+#define HX8357D_SETGAMMA 0xE0
+#define HX8357B_SETGAMMA 0xC8
+
+PROGMEM const uint8_t HX8357D_init_commands[] = {
+    1, 120, HX8357_SWRESET,
+    4, 500, HX8357D_SETC, 0xFF, 0x83, 0x57,
+    5, 0,   HX8357_SETRGB, 0x80, 0x00, 0X06, 0X06, // enable SDO pin
+    2, 0,   HX8357D_SETCOM, 0x25,               // -1.52V
+    2, 0,   HX8357_SETOSC, 0x68,                // Normal mode 70Hz, Idle mode 55 Hz
+    2, 0,   HX8357_SETPANEL, 0x05,              // BGR, Gate direction swapped
+    7, 0,   HX8357_SETPWR1, 0x00, 0x15, 0x1C, 0x1C, 0x83, 0xAA,
+    7, 0,   HX8357D_SETSTBA, 0x50, 0x50, 0x01, 0x3C, 0x1E, 0x08,
+    8, 0,   HX8357D_SETCYC, 0x02, 0x40, 0x00, 0x2A, 0x2A, 0x0D, 0x78,
+    35, 0,  HX8357D_SETGAMMA, 
+                        0x02, 0x0A, 0x11, 0x1d, 0x23, 0x35, 0x41, 
+                        0x4b, 0x4b, 0x42, 0x3A, 0x27, 0x1B, 0x08, 
+                        0x09, 0x03, 0x02, 0x0A, 0x11, 0x1d, 0x23, 
+                        0x35, 0x41, 0x4b, 0x4b, 0x42, 0x3A, 0x27, 
+                        0x1B, 0x08, 0x09, 0x03, 0x00, 0x01, // Gamma curve selected
+    2, 0,   HX8357_COLMOD, 0x55, //16 bit format
+    2, 0,   HX8357_MADCTL, 0xC0, // Memory Access Control
+    2, 0,   HX8357_TEON, 0x00,
+    3, 0,   HX8357_TEARLINE, 0x00, 0x02,
+    1, 150, HX8357_SLPOUT,
+    1, 80,   HX8357_DISPON,
+    0             // END OF COMMAND LIST
+};
+
+
 
 //--------------------------------------------------
 
@@ -426,7 +519,7 @@ FASTRUN void ILI948x_t4x_p::pushPixels16bitDMA(const uint16_t *pcolors, uint16_t
 ///////////////////
 FLASHMEM void ILI948x_t4x_p::displayInit(uint8_t disp_name) {
     const uint8_t *addr;
-    DBGPrintf("displayInit called\n");
+    Serial.print("displayInit called\n");
     switch (disp_name) {
     case 2: // ILI9481-1
     {
@@ -471,6 +564,15 @@ FLASHMEM void ILI948x_t4x_p::displayInit(uint8_t disp_name) {
         Serial.print("R61519 Initialized\n");
     } break;
 
+    case HX8357D: {
+        addr = HX8357D_init_commands;
+        MADCTL[0] = MADCTL_MX | MADCTL_MY | MADCTL_RGB;
+        MADCTL[1] = MADCTL_MV | MADCTL_MY | MADCTL_RGB;
+        MADCTL[2] = MADCTL_RGB;
+        MADCTL[3] = MADCTL_MX | MADCTL_MV | MADCTL_RGB;
+        Serial.print("HX8357D Initialized\n");
+    } break;
+
     case 0: // ILI9488
     default: {
         addr = ILI9488_init_commands;
@@ -484,7 +586,7 @@ FLASHMEM void ILI948x_t4x_p::displayInit(uint8_t disp_name) {
     } break;
     }
 
-    uint8_t cmd, commandVals[25];
+    uint8_t cmd, commandVals[50];
     while (1) {
         uint8_t count = *addr++;
         uint8_t ms = *addr++;
@@ -504,6 +606,7 @@ FLASHMEM void ILI948x_t4x_p::displayInit(uint8_t disp_name) {
         SglBeatWR_nPrm_8(cmd, commandVals, numArgs);
         delay(ms);
     }
+    Serial.print("displayInit return\n");
 }
 
 FASTRUN void ILI948x_t4x_p::CSLow() {
@@ -1536,7 +1639,7 @@ void ILI948x_t4x_p::readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, u
         // Serial.printf("\tD%u=%x\n", i, dummy);
     }
     /*Wait for transfer to be completed */
-    if (_display_name != ILI9488) {
+    if ((_display_name != ILI9488) && (_display_name != HX8357D)) {
         // 16 bit mode
         int count_pixels = w * h;
         uint8_t *pc = (uint8_t *)pcolors;

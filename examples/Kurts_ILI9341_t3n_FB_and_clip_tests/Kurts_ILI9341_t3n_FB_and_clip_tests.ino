@@ -16,9 +16,10 @@
 // Currently I have options for both MICROMOD and T42 to make it
 // easier for testing
 
-#if defined(ARDUINO_TEENSY_DEVBRD4)
-#define ILI948X ILI9488
-#define ILI948X_SPEED_MHX 12
+#if defined(ARDUINO_TEENSY_DEVBRD4) || defined(ARDUINO_TEENSY_DEVBRD5)
+//#define ILI948X ILI9488
+#define ILI948X HX8357D
+#define ILI948X_SPEED_MHX 20
 #elif defined(ARDUINO_TEENSY_MICROMOD)
 #define ILI948X ILI9486
 #define ILI948X_SPEED_MHX 12
@@ -61,7 +62,7 @@ uint8_t use_fb = 0;
 ILI948x_t4x_p tft = ILI948x_t4x_p(10, 8, 9);  //(dc, cs, rst)
 #elif ARDUINO_TEENSY40
 ILI948x_t4x_p tft = ILI948x_t4x_p(0, 1, 2);  //(dc, cs, rst)
-#elif defined(ARDUINO_TEENSY_DEVBRD4)
+#elif defined(ARDUINO_TEENSY_DEVBRD4)  || defined(ARDUINO_TEENSY_DEVBRD5)
 ILI948x_t4x_p tft = ILI948x_t4x_p(10, 11, 12);  //(dc, cs, rst)
 #else
 ILI948x_t4x_p tft = ILI948x_t4x_p(4, 5, 3);  //(dc, cs, rst)
@@ -102,6 +103,9 @@ void setup() {
 //tft.setFlexIOPins(7, 8);
 #if defined(ARDUINO_TEENSY_DEVBRD4)
     Serial.print("DEVBRD4 -");
+#elif defined(ARDUINO_TEENSY_DEVBRD5)
+    Serial.print("DEVBRD5 -");
+
 #elif defined(ARDUINO_TEENSY_MICROMOD)
     Serial.print("Micromod - ");
 #elif defined(ARDUINO_TEENSY41)
