@@ -4,7 +4,9 @@
 
 #if defined(ARDUINO_TEENSY41)
 // FlexIO pins: data: 19 18 14 15 40 41 17 16 WR:36 RD:37
-//  FlexIO3
+//0:19 1:18 2:14 3:15 4:40 5:41 6:17 7:16 
+//8:22 9:23 10:20 11:21 12:38 13:39 14:26 15:27
+// 16:8 17:7 18:36 19:37 28:35 29:34//  FlexIO3
 #define DISPLAY_WR 36
 #define DISPLAY_RD 37
 
@@ -17,6 +19,16 @@
 #define DISPLAY_D6 17
 #define DISPLAY_D7 16
 
+#define DISPLAY_D8 22
+#define DISPLAY_D9 23
+#define DISPLAY_D10 20
+#define DISPLAY_D11 21
+#define DISPLAY_D12 38
+#define DISPLAY_D13 39
+#define DISPLAY_D14 26
+#define DISPLAY_D15 27
+
+
 #elif defined(ARDUINO_TEENSY40)
 // BUGBUG Nibble mode
 #define DISPLAY_RD 20	// FlexIO3:10: RD
@@ -27,7 +39,7 @@
 #define DISPLAY_D2 14	 // FlexIO3:2 |
 #define DISPLAY_D3 15	 // FlexIO3:3 |
 #define DISPLAY_D4 17	 // FlexIO3:6 |
-#define DISPLAY_D5 16	 // FlexIO3:7 |
+#define DISPLAY_D5 16	 // FlexIO3:7 |Ye
 #define DISPLAY_D6 22	 // FlexIO3:8 |
 #define DISPLAY_D7 23	 // FlexIO3:9 D7
 

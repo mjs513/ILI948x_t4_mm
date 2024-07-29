@@ -60,49 +60,49 @@ PROGMEM const uint8_t ILI9486_init_commands[] = {
 
 PROGMEM const uint8_t ILI9481_1_init_commands[] = {
     1, 120, ILI9488_SWRESET,
-    1, 20, ILI9488_SLPOUT,
-    4, 0, ILI9488_NVMEMWR, 0x07, 0x41, 0x1D,
-    4, 0, ILI9488_NVMEMPROTKEY, 0x00, 0x2B, 0x1F,
-    3, 0, ILI9488_NVMEMSTATRD, 0x01, 0x11,
-    7, 0, ILI9488_PWCTR1, 0x10, 0x3B, 0x00, 0x02, 0x11, 0x00,
-    2, 0, ILI9488_VMCTR1, 0x03,
-    2, 0, ILI9488_CABCCTRL1, 0x80,
-    13, 0, ILI9488_CABCCTRL2, 0x00, 0x14, 0x33, 0x10, 0x00, 0x16, 0x44, 0x36, 0x77, 0x00, 0x0F, 0x00,
-    2, 0, 0xB0, 0x00,
-    2, 0, 0xE4, 0xA0,
-    2, 0, 0xF0, 0x08,
-    3, 0, 0xF3, 0x40, 0x0A,
-    1, 0, 0xF6, 0x84,
-    1, 0, ILI9488_ADJCTL3, 0x80,
-    5, 0, ILI9488_FRMCTR3, 0x00, 0x01, 0x06, 0x30,
-    1, 0, ILI9488_INVCTR, 0x00,
-    2, 0, ILI9488_RDCOLMOD, 0x00, 0x55,
-    2, 0, ILI9488_MADCTL, 0x48,
-    2, 0, ILI9488_COLMOD, 0x55,
+    1, 20,  ILI9488_SLPOUT,
+    4, 0,   ILI9488_NVMEMWR, 0x07, 0x41, 0x1D,
+    4, 0,   ILI9488_NVMEMPROTKEY, 0x00, 0x2B, 0x1F,
+    3, 0,   ILI9488_NVMEMSTATRD, 0x01, 0x11,
+    7, 0,   ILI9488_PWCTR1, 0x10, 0x3B, 0x00, 0x02, 0x11, 0x00,
+    2, 0,   ILI9488_VMCTR1, 0x03,
+    2, 0,   ILI9488_CABCCTRL1, 0x80,
+    13, 0,  ILI9488_CABCCTRL2, 0x00, 0x14, 0x33, 0x10, 0x00, 0x16, 0x44, 0x36, 0x77, 0x00, 0x0F, 0x00,
+    2, 0,   0xB0, 0x00,
+    2, 0,   0xE4, 0xA0,
+    2, 0,   0xF0, 0x08,
+    3, 0,   0xF3, 0x40, 0x0A,
+    2, 0,   0xF6, 0x84,
+    2, 0,   ILI9488_ADJCTL3, 0x80,
+    5, 0,   ILI9488_FRMCTR3, 0x00, 0x01, 0x06, 0x30,
+    2, 0,   ILI9488_INVCTR, 0x00,
+    3, 0,   ILI9488_RDCOLMOD, 0x00, 0x55,
+    2, 0,   ILI9488_MADCTL, 0x48,
+    2, 0,   ILI9488_COLMOD, 0x55,
     1, 120, ILI9488_INVON,
     1, 120, ILI9488_DISPON,
     0};
 
 PROGMEM const uint8_t ILI9481_2_init_commands[] = {
     1, 150, 0x01,
-    2, 150, 0x11,
-    3, 150, 0xd0, 0x07, 0x44, 0x1E,
-    3, 0, 0xd1, 0x00, 0x0C, 0x1A,
-    4, 0, 0xC5, 0x03,
-    3, 0, 0xd2, 0x01, 0x11,
-    2, 0, 0xE4, 0xa0,
-    3, 0, 0xf3, 0x00, 0x2a,
-    13, 0, 0xc8, 0x00, 0x26, 0x21, 0x00, 0x00, 0x1f, 0x65, 0x23, 0x77, 0x00, 0x0f, 0x00,
-    6, 0, 0xC0, 0x00, 0x3B, 0x00, 0x02, 0x11,
-    2, 0, 0xc6, 0x83,
-    2, 0, 0xf0, 0x01,
-    2, 0, 0xE4, 0xa0,
-    2, 0, 0x36, 0x8C,
-    2, 0, 0x3a, 0x55,
+    1, 150, 0x11,
+    4, 150, 0xd0, 0x07, 0x44, 0x1E,
+    4, 0,   0xd1, 0x00, 0x0C, 0x1A,
+    2, 0,   0xC5, 0x03,
+    3, 0,   0xd2, 0x01, 0x11,
+    2, 0,   0xE4, 0xa0,
+    3, 0,   0xf3, 0x00, 0x2a,
+    13, 0,  0xc8, 0x00, 0x26, 0x21, 0x00, 0x00, 0x1f, 0x65, 0x23, 0x77, 0x00, 0x0f, 0x00,
+    6, 0,   0xC0, 0x00, 0x3B, 0x00, 0x02, 0x11,
+    2, 0,   0xc6, 0x83,
+    2, 0,   0xf0, 0x01,
+    2, 0,   0xE4, 0xa0,
+    2, 0,   0x36, 0x8C,
+    2, 0,   0x3a, 0x55,
     5, 255, 0xb4, 0x02, 0x00, 0x00, 0x01,
-    5, 0, 0x2a, 0x00, 0x00, 0x01, 0x3F,
-    5, 10, 0x2b, 0x00, 0x00, 0x01, 0xDf,
-    1, 0, 0x29,
+    5, 0,   0x2a, 0x00, 0x00, 0x01, 0x3F,
+    5, 10,  0x2b, 0x00, 0x00, 0x01, 0xDf,
+    1, 0,   0x29,
     1, 120, 0x2c,
     0};
 
@@ -536,12 +536,14 @@ FASTRUN void ILI948x_t4x_p::microSecondDelay() {
 
 FASTRUN void ILI948x_t4x_p::gpioWrite() {
     pFlex->setIOPinToFlexMode(_wr_pin);
-    pinMode(_rd_pin, OUTPUT);
-    digitalWriteFast(_rd_pin, HIGH);
+    if (_rd_pin != 0xff) {
+        pinMode(_rd_pin, OUTPUT);
+        digitalWriteFast(_rd_pin, HIGH);
+    }
 }
 
 FASTRUN void ILI948x_t4x_p::gpioRead() {
-    pFlex->setIOPinToFlexMode(_rd_pin);
+    if (_rd_pin != 0xff) pFlex->setIOPinToFlexMode(_rd_pin);
     pinMode(_wr_pin, OUTPUT);
     digitalWriteFast(_wr_pin, HIGH);
 }
@@ -577,10 +579,8 @@ FASTRUN bool ILI948x_t4x_p::setFlexIOPins(uint8_t write_pin, uint8_t rd_pin, uin
 #endif
     }
     // set the write and read pins and see if d0 is not 0xff set it and compute the others.
-    if (write_pin != 0xff)
-        _wr_pin = write_pin;
-    if (rd_pin != 0xff)
-        _rd_pin = rd_pin;
+    _wr_pin = write_pin;
+    _rd_pin = rd_pin;
 
     DBGPrintf("FlexIO pins: data: %u %u %u %u %u %u %u %u WR:%u RD:%u\n",
               _data_pins[0], _data_pins[1], _data_pins[2], _data_pins[3], _data_pins[4], _data_pins[5], _data_pins[6], _data_pins[7],
@@ -692,14 +692,14 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Init() {
 
     /* Basic pin setup */
     pinMode(_wr_pin, OUTPUT); // FlexIO2:0 WR
-    pinMode(_rd_pin, OUTPUT); // FlexIO2:1 RD
+    if (_rd_pin != 0xff)pinMode(_rd_pin, OUTPUT); // FlexIO2:1 RD
 
     digitalWriteFast(_wr_pin, HIGH);
-    digitalWriteFast(_rd_pin, HIGH);
+    if (_rd_pin != 0xff) digitalWriteFast(_rd_pin, HIGH);
 
     /* High speed and drive strength configuration */
     *(portControlRegister(_wr_pin)) = 0xFF;
-    *(portControlRegister(_rd_pin)) = 0xFF;
+    if (_rd_pin != 0xff) *(portControlRegister(_rd_pin)) = 0xFF;
 
     for (uint8_t pin_index = 0; pin_index < _bus_width; pin_index++) {
         *(portControlRegister(_data_pins[pin_index])) = 0xFF;
@@ -712,7 +712,7 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Init() {
     hw->clock_gate_register |= hw->clock_gate_mask;
 
     pFlex->setIOPinToFlexMode(_wr_pin);
-    pFlex->setIOPinToFlexMode(_rd_pin);
+    if (_rd_pin != 0xff)pFlex->setIOPinToFlexMode(_rd_pin);
 
     for (uint8_t pin_index = 0; pin_index < _bus_width; pin_index++) {
         pFlex->setIOPinToFlexMode(_data_pins[pin_index]);
@@ -724,7 +724,7 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Init() {
                   *(portControlRegister(_data_pins[pin_index])), *(portConfigRegister(_data_pins[pin_index])));
     }
     DBGPrintf("WR: pin:%u Port:%08x Mux:%08x\n", _wr_pin, *(portControlRegister(_wr_pin)), *(portConfigRegister(_wr_pin)));
-    DBGPrintf("RD: pin:%u Port:%08x Mux:%08x\n", _rd_pin, *(portControlRegister(_rd_pin)), *(portConfigRegister(_rd_pin)));
+    if (_rd_pin != 0xff) DBGPrintf("RD: pin:%u Port:%08x Mux:%08x\n", _rd_pin, *(portControlRegister(_rd_pin)), *(portConfigRegister(_rd_pin)));
 
     /* Enable the FlexIO with fast access */
     p->CTRL = FLEXIO_CTRL_FLEXEN /*| FLEXIO_CTRL_FASTACC */;
@@ -795,6 +795,8 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Config_SnglBeat_Read() {
 }
 
 FASTRUN uint8_t ILI948x_t4x_p::readCommand(uint8_t const cmd) {
+    if (_rd_pin == 0xff) return 0xff;
+
     while (WR_AsyncTransferDone == false) {
         // Wait for any DMA transfers to complete
     }
@@ -839,6 +841,7 @@ FASTRUN uint8_t ILI948x_t4x_p::readCommand(uint8_t const cmd) {
 
 // Note we could combine the above with thsi.
 FASTRUN uint32_t ILI948x_t4x_p::readCommandN(uint8_t const cmd, uint8_t count_bytes) {
+    if (_rd_pin == 0xff) return (uint32_t)-1;
     while (WR_AsyncTransferDone == false) {
         // Wait for any DMA transfers to complete
     }
@@ -1514,6 +1517,7 @@ void ILI948x_t4x_p::fillRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, u
 }
 
 void ILI948x_t4x_p::readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *pcolors) {
+    if (_rd_pin == 0xff) return; // no read pin
     DBGPrintf("readRectFlexIO(%d, %d, %d, %d, %p)\n", x, y, w, h, pcolors);
     //  first do any clipping.
     if ((x >= _displayclipx2) || (y >= _displayclipy2))
