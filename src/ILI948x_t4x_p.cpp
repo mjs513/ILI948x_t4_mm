@@ -1,7 +1,10 @@
 #include "ILI948x_t4x_p.h"
 #include "ILI948x_t4x_p_default_flexio_pins.h"
-#include <MemoryHexDump.h>
 
+//#define DEBUG_ILI9488_READ_PIXEL
+#ifdef DEBUG_ILI9488_READ_PIXEL
+#include <MemoryHexDump.h>
+#endif
 
 #if !defined(ARDUINO_TEENSY_MICROMOD) && !defined(ARDUINO_TEENSY41)
 #warning This library only supports the Teensy Micromod and Teensy 4.1
@@ -1576,22 +1579,31 @@ void ILI948x_t4x_p::readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, u
     /*Wait for transfer to be completed */
     int count_pixels = w * h;
     if (_display_name != ILI9488) {
-        // 16 bit mode
-        uint8_t *pc = (uint8_t *)pcolors;
-        while (count_pixels--) {
-            waitReadShiftStat(__LINE__);
-            // digitalToggleFast(2);
-            uint8_t b1 = read_shiftbuf_byte();
+        if (_bus_width == 16) {
+            while (count_pixels--) {
+                waitReadShiftStat(__LINE__);
+                *pcolors++ = p->SHIFTBUF[_read_shifter] >> 16;
+            }
+        } else {
+            // 16 bit mode
+            uint8_t *pc = (uint8_t *)pcolors;
+            while (count_pixels--) {
+                waitReadShiftStat(__LINE__);
+                // digitalToggleFast(2);
+                uint8_t b1 = read_shiftbuf_byte();
 
-            waitReadShiftStat(__LINE__);
-            // digitalToggleFast(2);
-            *pc++ = read_shiftbuf_byte();
-            *pc++ = b1;
+                waitReadShiftStat(__LINE__);
+                // digitalToggleFast(2);
+                *pc++ = read_shiftbuf_byte();
+                *pc++ = b1;
+            }
         }
     } else if (_bus_width == 16) {
+        #ifdef DEBUG_ILI9488_READ_PIXEL
         static uint8_t read_debug_count = 10;
         static uint16_t debug_read_data[192];
-
+        #endif
+        
         uint8_t debug_read_index = 0;
         uint16_t w[3];
         uint8_t *b = (uint8_t*)w;
@@ -1614,17 +1626,21 @@ void ILI948x_t4x_p::readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, u
                 *pcolors++ = color565(b[1], b[0], b[3]);
                 count_pixels --;
             }
+            #ifdef DEBUG_ILI9488_READ_PIXEL
             if (debug_read_index < 192) {
                 debug_read_data[debug_read_index++] = w[0];
                 debug_read_data[debug_read_index++] = w[1];
                 debug_read_data[debug_read_index++] = w[2];
             }
+            #endif
         }
+        #ifdef DEBUG_ILI9488_READ_PIXEL
         if (read_debug_count) {
             read_debug_count--;
             Serial.printf("Dummy: %x %04x %04x %04x\n", dummy, debug_read_data[0], debug_read_data[1], debug_read_data[2]);
             MemoryHexDump(Serial, debug_read_data, debug_read_index * 2, true, "\nRaw Read Data:\n");
         }
+        #endif
     } else {
         while (count_pixels--) {
             uint16_t r, g, b;

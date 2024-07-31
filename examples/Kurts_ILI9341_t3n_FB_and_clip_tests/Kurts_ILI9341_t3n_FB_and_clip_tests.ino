@@ -23,8 +23,8 @@
 #define ILI948X ILI9486
 #define ILI948X_SPEED_MHX 12
 #elif defined(ARDUINO_TEENSY41) || defined(ARDUINO_TEENSY40)
-#define ILI948X ILI9488
-#define ILI948X_SPEED_MHX 24
+#define ILI948X ILI9486
+#define ILI948X_SPEED_MHX 16
 #endif
 
 
@@ -114,6 +114,7 @@ void setup() {
     if (ILI948X == ILI9486) Serial.print("ILI9486 Speed:");
     Serial.println(ILI948X_SPEED_MHX);
     tft.setBusWidth(16);
+    tft.setFlexIOPins(36, 37, 19);
     tft.begin(ILI948X, ILI948X_SPEED_MHX);
 
     tft.setBitDepth(16);
