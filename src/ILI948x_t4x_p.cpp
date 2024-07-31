@@ -1602,9 +1602,9 @@ void ILI948x_t4x_p::readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, u
         #ifdef DEBUG_ILI9488_READ_PIXEL
         static uint8_t read_debug_count = 10;
         static uint16_t debug_read_data[192];
-        #endif
-        
         uint8_t debug_read_index = 0;
+        #endif
+
         uint16_t w[3];
         uint8_t *b = (uint8_t*)w;
         while (count_pixels) {
@@ -1732,7 +1732,7 @@ FASTRUN void ILI948x_t4x_p::MulBeatWR_nPrm_IRQ(uint32_t const cmd,  const void *
     WR_AsyncTransferDone = false;
     uint32_t bytes = length*2U;
 
-    _irq_bytes_per_shifter = (_bus_width <= 8) ? 4 : 2;
+    _irq_bytes_per_shifter = (_bus_width != 10) ? 4 : 2;
     _irq_bytes_per_burst = _irq_bytes_per_shifter * SHIFTNUM;
 
     _irq_bursts_to_complete = bytes / _irq_bytes_per_burst;
@@ -1750,7 +1750,7 @@ FASTRUN void ILI948x_t4x_p::MulBeatWR_nPrm_IRQ(uint32_t const cmd,  const void *
     DBGPrintf("bytes per shifter: %u per burst:%u ", _irq_bytes_per_shifter, _irq_bytes_per_burst);
     DBGPrintf("START::_irq_bursts_to_complete: %d _irq_bytes_remaining: %d remainder:%u\n", _irq_bursts_to_complete, _irq_bytes_remaining, remainder);
   
-    uint8_t beats = SHIFTNUM * _irq_bytes_per_shifter;
+    uint8_t beats = SHIFTNUM * ((_bus_width <= 8)? 4 : 2);
     p->TIMCMP[_flexio_timer] = ((beats * 2U - 1) << 8) | (_baud_div / 2U - 1U);
 
     p->TIMSTAT = _flexio_timer_mask; // clear timer interrupt signal
@@ -1803,6 +1803,15 @@ FASTRUN void ILI948x_t4x_p::flexIRQ_Callback(){
                     uint32_t data = _irq_readPtr[i];
                     p->SHIFTBUFBYS[i] = ((data >> 16) & 0xFFFF) | ((data << 16) & 0xFFFF0000);
                 }
+            } else if (_bus_width == 16) {
+                // First try like 8 bit...                
+                uint16_t *pb = (uint16_t*)_irq_readPtr;
+                for (int i = SHIFTNUM - 1; i >= 0; i--) {
+                    //digitalToggleFast(3);
+                    p->SHIFTBUF[i] = (uint32_t)(pb[2 * i] << 0) | (uint32_t)(pb[2 * i + 1] << 16);
+                }
+                pb += 2 * SHIFTNUM;
+                _irq_readPtr = (uint32_t*)pb; 
             } else {
                 uint8_t *pb = (uint8_t*)_irq_readPtr;
                 for (int i = SHIFTNUM - 1; i >= 0; i--) {
@@ -1820,6 +1829,15 @@ FASTRUN void ILI948x_t4x_p::flexIRQ_Callback(){
                     p->SHIFTBUFBYS[i] = ((data >> 16) & 0xFFFF) | ((data << 16) & 0xFFFF0000);
                 }
                 _irq_readPtr += SHIFTNUM;
+            } else if (_bus_width == 16) {
+                // First try like 8 bit...                
+                uint16_t *pb = (uint16_t*)_irq_readPtr;
+                for (int i = SHIFTNUM - 1; i >= 0; i--) {
+                    //digitalToggleFast(3);
+                    p->SHIFTBUF[i] = (uint32_t)(pb[2 * i] << 0) | (uint32_t)(pb[2 * i + 1] << 16);
+                }
+                pb += 2 * SHIFTNUM;
+                _irq_readPtr = (uint32_t*)pb; 
             } else {
                 uint8_t *pb = (uint8_t*)_irq_readPtr;
                 for (int i = SHIFTNUM - 1; i >= 0; i--) {
