@@ -1,13 +1,17 @@
 #include "ILI948x_t4x_p.h"
 #include "ILI948x_t4x_p_default_flexio_pins.h"
 
+//#define DEBUG_ILI9488_READ_PIXEL
+#ifdef DEBUG_ILI9488_READ_PIXEL
+#include <MemoryHexDump.h>
+#endif
 
 #if !defined(ARDUINO_TEENSY_MICROMOD) && !defined(ARDUINO_TEENSY41)
 #warning This library only supports the Teensy Micromod and Teensy 4.1
 #endif
 
 //#define DEBUG
-//#define DEBUG_VERBOSE
+#define DEBUG_VERBOSE
 
 #ifndef DEBUG
 #undef DEBUG_VERBOSE
@@ -59,49 +63,49 @@ PROGMEM const uint8_t ILI9486_init_commands[] = {
 
 PROGMEM const uint8_t ILI9481_1_init_commands[] = {
     1, 120, ILI9488_SWRESET,
-    1, 20, ILI9488_SLPOUT,
-    4, 0, ILI9488_NVMEMWR, 0x07, 0x41, 0x1D,
-    4, 0, ILI9488_NVMEMPROTKEY, 0x00, 0x2B, 0x1F,
-    3, 0, ILI9488_NVMEMSTATRD, 0x01, 0x11,
-    7, 0, ILI9488_PWCTR1, 0x10, 0x3B, 0x00, 0x02, 0x11, 0x00,
-    2, 0, ILI9488_VMCTR1, 0x03,
-    2, 0, ILI9488_CABCCTRL1, 0x80,
-    13, 0, ILI9488_CABCCTRL2, 0x00, 0x14, 0x33, 0x10, 0x00, 0x16, 0x44, 0x36, 0x77, 0x00, 0x0F, 0x00,
-    2, 0, 0xB0, 0x00,
-    2, 0, 0xE4, 0xA0,
-    2, 0, 0xF0, 0x08,
-    3, 0, 0xF3, 0x40, 0x0A,
-    1, 0, 0xF6, 0x84,
-    1, 0, ILI9488_ADJCTL3, 0x80,
-    5, 0, ILI9488_FRMCTR3, 0x00, 0x01, 0x06, 0x30,
-    1, 0, ILI9488_INVCTR, 0x00,
-    2, 0, ILI9488_RDCOLMOD, 0x00, 0x55,
-    2, 0, ILI9488_MADCTL, 0x48,
-    2, 0, ILI9488_COLMOD, 0x55,
+    1, 20,  ILI9488_SLPOUT,
+    4, 0,   ILI9488_NVMEMWR, 0x07, 0x41, 0x1D,
+    4, 0,   ILI9488_NVMEMPROTKEY, 0x00, 0x2B, 0x1F,
+    3, 0,   ILI9488_NVMEMSTATRD, 0x01, 0x11,
+    7, 0,   ILI9488_PWCTR1, 0x10, 0x3B, 0x00, 0x02, 0x11, 0x00,
+    2, 0,   ILI9488_VMCTR1, 0x03,
+    2, 0,   ILI9488_CABCCTRL1, 0x80,
+    13, 0,  ILI9488_CABCCTRL2, 0x00, 0x14, 0x33, 0x10, 0x00, 0x16, 0x44, 0x36, 0x77, 0x00, 0x0F, 0x00,
+    2, 0,   0xB0, 0x00,
+    2, 0,   0xE4, 0xA0,
+    2, 0,   0xF0, 0x08,
+    3, 0,   0xF3, 0x40, 0x0A,
+    2, 0,   0xF6, 0x84,
+    2, 0,   ILI9488_ADJCTL3, 0x80,
+    5, 0,   ILI9488_FRMCTR3, 0x00, 0x01, 0x06, 0x30,
+    2, 0,   ILI9488_INVCTR, 0x00,
+    3, 0,   ILI9488_RDCOLMOD, 0x00, 0x55,
+    2, 0,   ILI9488_MADCTL, 0x48,
+    2, 0,   ILI9488_COLMOD, 0x55,
     1, 120, ILI9488_INVON,
     1, 120, ILI9488_DISPON,
     0};
 
 PROGMEM const uint8_t ILI9481_2_init_commands[] = {
     1, 150, 0x01,
-    2, 150, 0x11,
-    3, 150, 0xd0, 0x07, 0x44, 0x1E,
-    3, 0, 0xd1, 0x00, 0x0C, 0x1A,
-    4, 0, 0xC5, 0x03,
-    3, 0, 0xd2, 0x01, 0x11,
-    2, 0, 0xE4, 0xa0,
-    3, 0, 0xf3, 0x00, 0x2a,
-    13, 0, 0xc8, 0x00, 0x26, 0x21, 0x00, 0x00, 0x1f, 0x65, 0x23, 0x77, 0x00, 0x0f, 0x00,
-    6, 0, 0xC0, 0x00, 0x3B, 0x00, 0x02, 0x11,
-    2, 0, 0xc6, 0x83,
-    2, 0, 0xf0, 0x01,
-    2, 0, 0xE4, 0xa0,
-    2, 0, 0x36, 0x8C,
-    2, 0, 0x3a, 0x55,
+    1, 150, 0x11,
+    4, 150, 0xd0, 0x07, 0x44, 0x1E,
+    4, 0,   0xd1, 0x00, 0x0C, 0x1A,
+    2, 0,   0xC5, 0x03,
+    3, 0,   0xd2, 0x01, 0x11,
+    2, 0,   0xE4, 0xa0,
+    3, 0,   0xf3, 0x00, 0x2a,
+    13, 0,  0xc8, 0x00, 0x26, 0x21, 0x00, 0x00, 0x1f, 0x65, 0x23, 0x77, 0x00, 0x0f, 0x00,
+    6, 0,   0xC0, 0x00, 0x3B, 0x00, 0x02, 0x11,
+    2, 0,   0xc6, 0x83,
+    2, 0,   0xf0, 0x01,
+    2, 0,   0xE4, 0xa0,
+    2, 0,   0x36, 0x8C,
+    2, 0,   0x3a, 0x55,
     5, 255, 0xb4, 0x02, 0x00, 0x00, 0x01,
-    5, 0, 0x2a, 0x00, 0x00, 0x01, 0x3F,
-    5, 10, 0x2b, 0x00, 0x00, 0x01, 0xDf,
-    1, 0, 0x29,
+    5, 0,   0x2a, 0x00, 0x00, 0x01, 0x3F,
+    5, 10,  0x2b, 0x00, 0x00, 0x01, 0xDf,
+    1, 0,   0x29,
     1, 120, 0x2c,
     0};
 
@@ -135,7 +139,12 @@ PROGMEM const uint8_t R61519_init_commands[] = {
 
 FLASHMEM ILI948x_t4x_p::ILI948x_t4x_p(int8_t dc, int8_t cs, int8_t rst)
     : Teensy_Parallel_GFX(_TFTWIDTH, _TFTHEIGHT), _dc(dc), _cs(cs), _rst(rst),
-      _data_pins{DISPLAY_D0, DISPLAY_D1, DISPLAY_D2, DISPLAY_D3, DISPLAY_D4, DISPLAY_D5, DISPLAY_D6, DISPLAY_D7},
+      _data_pins{DISPLAY_D0, DISPLAY_D1, DISPLAY_D2, DISPLAY_D3, DISPLAY_D4, DISPLAY_D5, DISPLAY_D6, DISPLAY_D7,
+  #if defined(DISPLAY_D8)
+      DISPLAY_D8, DISPLAY_D9, DISPLAY_D10, DISPLAY_D11, DISPLAY_D12, DISPLAY_D13, DISPLAY_D14, DISPLAY_D15}, 
+#else
+      0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff},
+#endif      
       _wr_pin(DISPLAY_WR), _rd_pin(DISPLAY_RD) {
 }
 
@@ -426,7 +435,7 @@ FASTRUN void ILI948x_t4x_p::pushPixels16bitDMA(const uint16_t *pcolors, uint16_t
 ///////////////////
 FLASHMEM void ILI948x_t4x_p::displayInit(uint8_t disp_name) {
     const uint8_t *addr;
-    DBGPrintf("displayInit called\n");
+    Serial.print("displayInit called\n");
     switch (disp_name) {
     case 2: // ILI9481-1
     {
@@ -484,7 +493,7 @@ FLASHMEM void ILI948x_t4x_p::displayInit(uint8_t disp_name) {
     } break;
     }
 
-    uint8_t cmd, commandVals[25];
+    uint8_t cmd, commandVals[50];
     while (1) {
         uint8_t count = *addr++;
         uint8_t ms = *addr++;
@@ -504,6 +513,7 @@ FLASHMEM void ILI948x_t4x_p::displayInit(uint8_t disp_name) {
         SglBeatWR_nPrm_8(cmd, commandVals, numArgs);
         delay(ms);
     }
+    Serial.print("displayInit return\n");
 }
 
 FASTRUN void ILI948x_t4x_p::CSLow() {
@@ -529,12 +539,14 @@ FASTRUN void ILI948x_t4x_p::microSecondDelay() {
 
 FASTRUN void ILI948x_t4x_p::gpioWrite() {
     pFlex->setIOPinToFlexMode(_wr_pin);
-    pinMode(_rd_pin, OUTPUT);
-    digitalWriteFast(_rd_pin, HIGH);
+    if (_rd_pin != 0xff) {
+        pinMode(_rd_pin, OUTPUT);
+        digitalWriteFast(_rd_pin, HIGH);
+    }
 }
 
 FASTRUN void ILI948x_t4x_p::gpioRead() {
-    pFlex->setIOPinToFlexMode(_rd_pin);
+    if (_rd_pin != 0xff) pFlex->setIOPinToFlexMode(_rd_pin);
     pinMode(_wr_pin, OUTPUT);
     digitalWriteFast(_wr_pin, HIGH);
 }
@@ -557,7 +569,7 @@ FASTRUN bool ILI948x_t4x_p::setFlexIOPins(uint8_t write_pin, uint8_t rd_pin, uin
         _data_pins[0] = tft_d0;
 
         // lets dos some quick validation of the pins.
-        for (uint8_t i = 1; i < 8; i++) {
+        for (uint8_t i = 1; i < _bus_width; i++) {
             flexio_pin++; // lets look up the what pins come next.
             _data_pins[i] = pFlex->mapFlexPinToIOPin(flexio_pin);
             if (_data_pins[i] == 0xff) {
@@ -570,10 +582,8 @@ FASTRUN bool ILI948x_t4x_p::setFlexIOPins(uint8_t write_pin, uint8_t rd_pin, uin
 #endif
     }
     // set the write and read pins and see if d0 is not 0xff set it and compute the others.
-    if (write_pin != 0xff)
-        _wr_pin = write_pin;
-    if (rd_pin != 0xff)
-        _rd_pin = rd_pin;
+    _wr_pin = write_pin;
+    _rd_pin = rd_pin;
 
     DBGPrintf("FlexIO pins: data: %u %u %u %u %u %u %u %u WR:%u RD:%u\n",
               _data_pins[0], _data_pins[1], _data_pins[2], _data_pins[3], _data_pins[4], _data_pins[5], _data_pins[6], _data_pins[7],
@@ -583,7 +593,8 @@ FASTRUN bool ILI948x_t4x_p::setFlexIOPins(uint8_t write_pin, uint8_t rd_pin, uin
 
 // Set the FlexIO pins.  Specify all of the pins for 8 bit mode. Must be called before begin
 FLASHMEM bool ILI948x_t4x_p::setFlexIOPins(uint8_t write_pin, uint8_t rd_pin, uint8_t d0, uint8_t d1, uint8_t d2, uint8_t d3,
-                                           uint8_t d4, uint8_t d5, uint8_t d6, uint8_t d7) {
+                                           uint8_t d4, uint8_t d5, uint8_t d6, uint8_t d7, uint8_t d8, uint8_t d9, uint8_t d10,
+                                           uint8_t d11, uint8_t d12, uint8_t d13, uint8_t d14, uint8_t d15 ) {
 
     _data_pins[0] = d0;
     _data_pins[1] = d1;
@@ -596,9 +607,19 @@ FLASHMEM bool ILI948x_t4x_p::setFlexIOPins(uint8_t write_pin, uint8_t rd_pin, ui
     _wr_pin = write_pin;
     _rd_pin = rd_pin;
 
-    DBGPrintf("FlexIO pins: data: %u %u %u %u %u %u %u %u WR:%u RD:%u\n",
+    _data_pins[8] = d8;
+    _data_pins[9] = d9;
+    _data_pins[10] = d10;
+    _data_pins[11] = d11;
+    _data_pins[12] = d12;
+    _data_pins[13] = d13;
+    _data_pins[14] = d14;
+    _data_pins[15] = d15;
+    DBGPrintf("FlexIO pins: data: %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u WR:%u RD:%u\n",
               _data_pins[0], _data_pins[1], _data_pins[2], _data_pins[3], _data_pins[4], _data_pins[5], _data_pins[6], _data_pins[7],
+              _data_pins[8], _data_pins[9], _data_pins[10], _data_pins[11], _data_pins[12], _data_pins[13], _data_pins[14], _data_pins[15],
               _wr_pin, _rd_pin);
+
     // Note this does not verify the pins are valid.
     return true;
 }
@@ -619,9 +640,9 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Init() {
 
     // lets do some quick validation of the pins.
     // BUGBUG: nibble mode sort of hard coded pin wise..
-    _bus_width = 8;
+    //_bus_width = 8;
     uint8_t previous_flexio_pin = _flexio_D0;
-    for (uint8_t i = 1; i < 8; i++) {
+    for (uint8_t i = 1; i < _bus_width; i++) {
         uint8_t flexio_pin = pFlex->mapIOPinToFlexPin(_data_pins[i]);
         if (flexio_pin != (previous_flexio_pin + 1)) {
             if ((i == 4) && (flexio_pin != 0xff)) {
@@ -668,22 +689,22 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Init() {
     DBGPrintf("FlexIO pin mappings: D0(%u)=%u  WR(%u)=%u RD(%u)=%u\n)", _data_pins[0], _flexio_D0, _wr_pin, _flexio_WR, _rd_pin, _flexio_RD);
 
     // Now l
-    for (uint8_t pin_index = 0; pin_index < 8; pin_index++) {
+    for (uint8_t pin_index = 0; pin_index < _bus_width; pin_index++) {
         pinMode(_data_pins[pin_index], OUTPUT);
     }
 
     /* Basic pin setup */
     pinMode(_wr_pin, OUTPUT); // FlexIO2:0 WR
-    pinMode(_rd_pin, OUTPUT); // FlexIO2:1 RD
+    if (_rd_pin != 0xff)pinMode(_rd_pin, OUTPUT); // FlexIO2:1 RD
 
     digitalWriteFast(_wr_pin, HIGH);
-    digitalWriteFast(_rd_pin, HIGH);
+    if (_rd_pin != 0xff) digitalWriteFast(_rd_pin, HIGH);
 
     /* High speed and drive strength configuration */
     *(portControlRegister(_wr_pin)) = 0xFF;
-    *(portControlRegister(_rd_pin)) = 0xFF;
+    if (_rd_pin != 0xff) *(portControlRegister(_rd_pin)) = 0xFF;
 
-    for (uint8_t pin_index = 0; pin_index < 8; pin_index++) {
+    for (uint8_t pin_index = 0; pin_index < _bus_width; pin_index++) {
         *(portControlRegister(_data_pins[pin_index])) = 0xFF;
     }
 
@@ -694,19 +715,19 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Init() {
     hw->clock_gate_register |= hw->clock_gate_mask;
 
     pFlex->setIOPinToFlexMode(_wr_pin);
-    pFlex->setIOPinToFlexMode(_rd_pin);
+    if (_rd_pin != 0xff)pFlex->setIOPinToFlexMode(_rd_pin);
 
-    for (uint8_t pin_index = 0; pin_index < 8; pin_index++) {
+    for (uint8_t pin_index = 0; pin_index < _bus_width; pin_index++) {
         pFlex->setIOPinToFlexMode(_data_pins[pin_index]);
     }
 
     // Lets print out all of the pins, configurations
-    for (uint8_t pin_index = 0; pin_index < 8; pin_index++) {
+    for (uint8_t pin_index = 0; pin_index < _bus_width; pin_index++) {
         DBGPrintf("Data%u: pin:%u Port:%08x Mux:%08x\n", pin_index, _data_pins[pin_index],
                   *(portControlRegister(_data_pins[pin_index])), *(portConfigRegister(_data_pins[pin_index])));
     }
     DBGPrintf("WR: pin:%u Port:%08x Mux:%08x\n", _wr_pin, *(portControlRegister(_wr_pin)), *(portConfigRegister(_wr_pin)));
-    DBGPrintf("RD: pin:%u Port:%08x Mux:%08x\n", _rd_pin, *(portControlRegister(_rd_pin)), *(portConfigRegister(_rd_pin)));
+    if (_rd_pin != 0xff) DBGPrintf("RD: pin:%u Port:%08x Mux:%08x\n", _rd_pin, *(portControlRegister(_rd_pin)), *(portConfigRegister(_rd_pin)));
 
     /* Enable the FlexIO with fast access */
     p->CTRL = FLEXIO_CTRL_FLEXEN /*| FLEXIO_CTRL_FASTACC */;
@@ -777,6 +798,8 @@ FASTRUN void ILI948x_t4x_p::FlexIO_Config_SnglBeat_Read() {
 }
 
 FASTRUN uint8_t ILI948x_t4x_p::readCommand(uint8_t const cmd) {
+    if (_rd_pin == 0xff) return 0xff;
+
     while (WR_AsyncTransferDone == false) {
         // Wait for any DMA transfers to complete
     }
@@ -821,6 +844,7 @@ FASTRUN uint8_t ILI948x_t4x_p::readCommand(uint8_t const cmd) {
 
 // Note we could combine the above with thsi.
 FASTRUN uint32_t ILI948x_t4x_p::readCommandN(uint8_t const cmd, uint8_t count_bytes) {
+    if (_rd_pin == 0xff) return (uint32_t)-1;
     while (WR_AsyncTransferDone == false) {
         // Wait for any DMA transfers to complete
     }
@@ -1135,20 +1159,28 @@ FASTRUN void ILI948x_t4x_p::SglBeatWR_nPrm_16(uint32_t const cmd, const uint16_t
         for (uint32_t i = 0; i < length - 1U; i++) {
             buf = *value++;
             waitWriteShiftStat(__LINE__);
-            p->SHIFTBUF[_write_shifter] = generate_output_word(buf >> 8);
+            if (_bus_width == 16) {
+                p->SHIFTBUF[_write_shifter] = buf;
+            } else {
+                p->SHIFTBUF[_write_shifter] = generate_output_word(buf >> 8);
 
-            waitWriteShiftStat(__LINE__);
-            p->SHIFTBUF[_write_shifter] = generate_output_word(buf & 0xFF);
+                waitWriteShiftStat(__LINE__);
+                p->SHIFTBUF[_write_shifter] = generate_output_word(buf & 0xFF);
+            }
         }
         buf = *value++;
         /* Write the last byte */
         waitWriteShiftStat(__LINE__);
-        p->SHIFTBUF[_write_shifter] = generate_output_word(buf >> 8);
+        if (_bus_width == 16) {
+            p->SHIFTBUF[_write_shifter] = buf;
+        } else {
+            p->SHIFTBUF[_write_shifter] = generate_output_word(buf >> 8);
 
-        waitWriteShiftStat(__LINE__);
-        p->TIMSTAT |= _flexio_timer_mask;
+            waitWriteShiftStat(__LINE__);
+            p->TIMSTAT |= _flexio_timer_mask;
 
-        p->SHIFTBUF[_write_shifter] = generate_output_word(buf & 0xFF);
+            p->SHIFTBUF[_write_shifter] = generate_output_word(buf & 0xFF);
+        }
 
         /*Wait for transfer to be completed */
         waitTimStat();
@@ -1410,10 +1442,14 @@ void ILI948x_t4x_p::beginWrite16BitColors() {
 
 void ILI948x_t4x_p::write16BitColor(uint16_t color) {
     waitWriteShiftStat(__LINE__);
-    p->SHIFTBUF[_write_shifter] = generate_output_word(color >> 8);
+    if (_bus_width == 16) {
+        p->SHIFTBUF[_write_shifter] = color;
+    } else {    
+        p->SHIFTBUF[_write_shifter] = generate_output_word(color >> 8);
 
-    waitWriteShiftStat(__LINE__);
-    p->SHIFTBUF[_write_shifter] = generate_output_word(color & 0xFF);
+        waitWriteShiftStat(__LINE__);
+        p->SHIFTBUF[_write_shifter] = generate_output_word(color & 0xFF);
+    }
 }
 
 void ILI948x_t4x_p::endWrite16BitColors() {
@@ -1459,10 +1495,14 @@ void ILI948x_t4x_p::fillRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, u
     microSecondDelay();
     while (length-- > 1) {
         waitWriteShiftStat(__LINE__);
-        p->SHIFTBUF[_write_shifter] = generate_output_word(color >> 8);
+        if (_bus_width == 16) {
+            p->SHIFTBUF[_write_shifter] = color; 
+        }else {
+            p->SHIFTBUF[_write_shifter] = generate_output_word(color >> 8);
 
-        waitWriteShiftStat(__LINE__);
-        p->SHIFTBUF[_write_shifter] = generate_output_word(color & 0xFF);
+            waitWriteShiftStat(__LINE__);
+            p->SHIFTBUF[_write_shifter] = generate_output_word(color & 0xFF);
+        }
     }
     /* Write the last pixel */
     waitWriteShiftStat(__LINE__);
@@ -1480,6 +1520,7 @@ void ILI948x_t4x_p::fillRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, u
 }
 
 void ILI948x_t4x_p::readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, uint16_t *pcolors) {
+    if (_rd_pin == 0xff) return; // no read pin
     DBGPrintf("readRectFlexIO(%d, %d, %d, %d, %p)\n", x, y, w, h, pcolors);
     //  first do any clipping.
     if ((x >= _displayclipx2) || (y >= _displayclipy2))
@@ -1517,16 +1558,16 @@ void ILI948x_t4x_p::readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, u
     microSecondDelay();
 
     /* De-assert RS pin */
+    DBGPrintf("\tcall FlexIO_Clear_Config_SnglBeat\n");
+    FlexIO_Clear_Config_SnglBeat();
     DCHigh();
     microSecondDelay();
     // delayMicroseconds(50);
 
-    DBGPrintf("\tcall FlexIO_Clear_Config_SnglBeat\n");
-    FlexIO_Clear_Config_SnglBeat();
     DBGPrintf("\tcall FlexIO_Config_SnglBeat_Read\n");
     FlexIO_Config_SnglBeat_Read();
 
-    uint8_t dummy __attribute__((unused)) = 0;
+    uint16_t dummy __attribute__((unused)) = 0;
 #define DUMMY_COUNT 1
     for (uint8_t i = 0; i < DUMMY_COUNT; i++) {
         // read in dummy bytes
@@ -1536,24 +1577,73 @@ void ILI948x_t4x_p::readRectFlexIO(int16_t x, int16_t y, int16_t w, int16_t h, u
         // Serial.printf("\tD%u=%x\n", i, dummy);
     }
     /*Wait for transfer to be completed */
+    int count_pixels = w * h;
     if (_display_name != ILI9488) {
-        // 16 bit mode
-        int count_pixels = w * h;
-        uint8_t *pc = (uint8_t *)pcolors;
-        while (count_pixels--) {
+        if (_bus_width == 16) {
+            while (count_pixels--) {
+                waitReadShiftStat(__LINE__);
+                *pcolors++ = p->SHIFTBUF[_read_shifter] >> 16;
+            }
+        } else {
+            // 16 bit mode
+            uint8_t *pc = (uint8_t *)pcolors;
+            while (count_pixels--) {
+                waitReadShiftStat(__LINE__);
+                // digitalToggleFast(2);
+                uint8_t b1 = read_shiftbuf_byte();
+
+                waitReadShiftStat(__LINE__);
+                // digitalToggleFast(2);
+                *pc++ = read_shiftbuf_byte();
+                *pc++ = b1;
+            }
+        }
+    } else if (_bus_width == 16) {
+        #ifdef DEBUG_ILI9488_READ_PIXEL
+        static uint8_t read_debug_count = 10;
+        static uint16_t debug_read_data[192];
+        #endif
+        
+        uint8_t debug_read_index = 0;
+        uint16_t w[3];
+        uint8_t *b = (uint8_t*)w;
+        while (count_pixels) {
             waitReadShiftStat(__LINE__);
-            // digitalToggleFast(2);
-            uint8_t b1 = read_shiftbuf_byte();
+            w[0] = p->SHIFTBUF[_read_shifter] >> 16;
 
             waitReadShiftStat(__LINE__);
-            // digitalToggleFast(2);
-            *pc++ = read_shiftbuf_byte();
-            *pc++ = b1;
+            w[1] = p->SHIFTBUF[_read_shifter] >> 16;
+
+            if (count_pixels != 1) {
+                waitReadShiftStat(__LINE__);
+                w[2] = p->SHIFTBUF[_read_shifter] >> 16;
+
+                *pcolors++ = color565(b[1], b[0], b[3]);
+                *pcolors++ = color565(b[2], b[5], b[4]);
+                count_pixels -= 2;
+            } else {
+                // not sure which byte the B will be on? guessing high byte of 2nd word...
+                *pcolors++ = color565(b[1], b[0], b[3]);
+                count_pixels --;
+            }
+            #ifdef DEBUG_ILI9488_READ_PIXEL
+            if (debug_read_index < 192) {
+                debug_read_data[debug_read_index++] = w[0];
+                debug_read_data[debug_read_index++] = w[1];
+                debug_read_data[debug_read_index++] = w[2];
+            }
+            #endif
         }
+        #ifdef DEBUG_ILI9488_READ_PIXEL
+        if (read_debug_count) {
+            read_debug_count--;
+            Serial.printf("Dummy: %x %04x %04x %04x\n", dummy, debug_read_data[0], debug_read_data[1], debug_read_data[2]);
+            MemoryHexDump(Serial, debug_read_data, debug_read_index * 2, true, "\nRaw Read Data:\n");
+        }
+        #endif
     } else {
-        int count_pixels = w * h;
         while (count_pixels--) {
-            uint8_t r, g, b;
+            uint16_t r, g, b;
             waitReadShiftStat(__LINE__);
             // digitalToggleFast(2);
             r = read_shiftbuf_byte();

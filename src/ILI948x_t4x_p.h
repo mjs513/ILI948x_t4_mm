@@ -114,8 +114,8 @@
 
 /****************************************************************************************/
 // #define ILI9488_CLOCK_READ 30   //equates to 8mhz
-#define ILI9488_CLOCK_READ 60 // equates to 4mhz
-//#define ILI9488_CLOCK_READ 120   //equates to 2mhz
+//#define ILI9488_CLOCK_READ 60 // equates to 4mhz
+#define ILI9488_CLOCK_READ 120   //equates to 2mhz
 
 enum {
     ILI9488 = 0,
@@ -138,11 +138,17 @@ class ILI948x_t4x_p : public Teensy_Parallel_GFX {
     bool setFlexIOPins(uint8_t write_pin, uint8_t rd_pin, uint8_t tft_d0 = 0xff);
 
     // Set the FlexIO pins.  Specify all of the pins for 8 bit mode. Must be called before begin
-    bool setFlexIOPins(uint8_t write_pin, uint8_t rd_pin, uint8_t d0, uint8_t d1, uint8_t d2, uint8_t d3,
-                       uint8_t d4, uint8_t d5, uint8_t d6, uint8_t d7);
+    bool setFlexIOPins(uint8_t write_pin, uint8_t rd_pin, 
+                       uint8_t d0, uint8_t d1, uint8_t d2, uint8_t d3,
+                       uint8_t d4, uint8_t d5, uint8_t d6, uint8_t d7,
+                       uint8_t d8=0xff, uint8_t d9=0xff, uint8_t d10=0xff, uint8_t d11=0xff,
+                       uint8_t d12=0xff, uint8_t d13=0xff, uint8_t d14=0xff, uint8_t d15=0xff);
 
     uint8_t setBitDepth(uint8_t bitDepth);
     uint8_t getBitDepth();
+
+    void setBusWidth(uint8_t busWidth) {_bus_width = busWidth;}
+    uint8_t getBusWidth() {return _bus_width;}
 
     void setFrameRate(uint8_t frRate);
     uint8_t getFrameRate();
@@ -187,16 +193,16 @@ class ILI948x_t4x_p : public Teensy_Parallel_GFX {
         #if !defined(ARDUINO_TEENSY40)
         return data;
         #else
-        if (_bus_width == 8) return data;
+        if (_bus_width != 10) return data;
         return (uint16_t)(data & 0x0F) | (uint16_t)((data & 0xF0) << 2);
         #endif
     }
 
-    uint8_t read_shiftbuf_byte() __attribute__((always_inline)) {
+    uint16_t read_shiftbuf_byte() __attribute__((always_inline)) {
         #if !defined(ARDUINO_TEENSY40)
         return p->SHIFTBUFBYS[_read_shifter];
         #else
-        if (_bus_width == 8) return p->SHIFTBUFBYS[_read_shifter];
+        if (_bus_width != 10) return p->SHIFTBUFBYS[_read_shifter];
         uint16_t data = p->SHIFTBUF[_read_shifter] >> 16; // 10 bits but shifter does 16
         return ((data >> 2) & 0xf0) | (data & 0xf);
         #endif
@@ -323,7 +329,7 @@ class ILI948x_t4x_p : public Teensy_Parallel_GFX {
     int8_t _dc, _cs, _rst;
 
     // The Teensy IO pins used for data and Read and Write
-    uint8_t _data_pins[8], _wr_pin, _rd_pin;
+    uint8_t _data_pins[16], _wr_pin, _rd_pin;
 
     uint8_t _flexio_D0, _flexio_WR, _flexio_RD; // which flexio pins do they map to
     uint8_t _write_shifter = 0;

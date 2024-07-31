@@ -16,15 +16,15 @@
 // Currently I have options for both MICROMOD and T42 to make it
 // easier for testing
 
-#if defined(ARDUINO_TEENSY_DEVBRD4)
+#if defined(ARDUINO_TEENSY_DEVBRD4) || defined(ARDUINO_TEENSY_DEVBRD5)
 #define ILI948X ILI9488
-#define ILI948X_SPEED_MHX 12
+#define ILI948X_SPEED_MHX 20
 #elif defined(ARDUINO_TEENSY_MICROMOD)
 #define ILI948X ILI9486
 #define ILI948X_SPEED_MHX 12
 #elif defined(ARDUINO_TEENSY41) || defined(ARDUINO_TEENSY40)
-#define ILI948X ILI9488
-#define ILI948X_SPEED_MHX 24
+#define ILI948X ILI9486
+#define ILI948X_SPEED_MHX 16
 #endif
 
 
@@ -61,7 +61,7 @@ uint8_t use_fb = 0;
 ILI948x_t4x_p tft = ILI948x_t4x_p(10, 8, 9);  //(dc, cs, rst)
 #elif ARDUINO_TEENSY40
 ILI948x_t4x_p tft = ILI948x_t4x_p(0, 1, 2);  //(dc, cs, rst)
-#elif defined(ARDUINO_TEENSY_DEVBRD4)
+#elif defined(ARDUINO_TEENSY_DEVBRD4) || defined(ARDUINO_TEENSY_DEVBRD5)
 ILI948x_t4x_p tft = ILI948x_t4x_p(10, 11, 12);  //(dc, cs, rst)
 #else
 ILI948x_t4x_p tft = ILI948x_t4x_p(4, 5, 3);  //(dc, cs, rst)
@@ -102,6 +102,9 @@ void setup() {
 //tft.setFlexIOPins(7, 8);
 #if defined(ARDUINO_TEENSY_DEVBRD4)
     Serial.print("DEVBRD4 -");
+#elif defined(ARDUINO_TEENSY_DEVBRD5)
+    Serial.print("DEVBRD5 -");
+
 #elif defined(ARDUINO_TEENSY_MICROMOD)
     Serial.print("Micromod - ");
 #elif defined(ARDUINO_TEENSY41)
@@ -110,6 +113,8 @@ void setup() {
     if (ILI948X == ILI9488) Serial.print("ILI9488 Speed:");
     if (ILI948X == ILI9486) Serial.print("ILI9486 Speed:");
     Serial.println(ILI948X_SPEED_MHX);
+    tft.setBusWidth(16);
+    tft.setFlexIOPins(36, 37, 19);
     tft.begin(ILI948X, ILI948X_SPEED_MHX);
 
     tft.setBitDepth(16);
@@ -484,7 +489,9 @@ void drawTestScreen() {
 
     tft.writeRect(BAND_START_X, BAND_START_Y + BAND_HEIGHT + 3, BAND_WIDTH * 8, BAND_HEIGHT, pixel_data);
     //WaitForUserInput();
-
+    for (int x = BAND_START_X + BAND_WIDTH / 2; x < (BAND_START_X + 8 * BAND_WIDTH); x += BAND_WIDTH) {
+        Serial.printf("x:%d color:%x\n", x, tft.readPixel(x, BAND_START_Y + BAND_HEIGHT / 2));
+    }
     tft.readRect(0, 0, 50, 50, pixel_data);
     //    MemoryHexDump(Serial, pixel_data, 1024, true);
     // For heck of it lets make sure readPixel and ReadRect
