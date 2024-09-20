@@ -17,7 +17,7 @@
 #define BIT_DEPTH 16
 #define CTP_INT_PIN 22 // 0xff if pin is not connected
 #define ROTATION 3
-#define SHOW_TOUCH_INFO
+//#define SHOW_TOUCH_INFO
 
 #include <Wire.h>  // this is needed for FT6206
 #include <FT6x36_t4.h>
@@ -96,14 +96,14 @@ void setup(void) {
 
     Serial.println("\n*** Start Touch controller ***");
     Wire.begin();
-    //if (!ctp.begin(40, &Wire, 0x38)) {  // pass in 'sensitivity' coefficient and I2C bus
-    if (!ctp.begin(&Wire, 0x38)) {  // pass in 'sensitivity' coefficient and I2C bus
-        Serial.println("Couldn't start FT6206 touchscreen controller");
+//    if (!ctp.begin(&Wire, 0x38)) {  // Optional pass in which Wire object and device ID
+    if (!ctp.begin()) {  // Use default: Wire and 0x38
+        Serial.println("Couldn't start FT6236 touchscreen controller");
         while (1) delay(10);
     }
 
     Serial.println("Capacitive touchscreen started");
-
+    ctp.showAllRegisters();
     tft.fillScreen(ILI9488_BLACK);
 
     // make the color selection boxes
@@ -137,6 +137,11 @@ void loop() {
     ctp.touchPoint(p.x, p.y);
 
     // Print out raw data from screen touch controller
+
+    uint8_t gesture = ctp.gesture();
+    if (gesture) {
+      Serial.printf("!! Gesture: %u\n", gesture);
+    }
 
     #ifdef SHOW_TOUCH_INFO
     Serial.print("X = ");
@@ -204,5 +209,9 @@ void loop() {
     }
     if (((p.y - PENRADIUS) > BOXSIZE) && ((p.y + PENRADIUS) < tft.height())) {
         tft.fillCircle(p.x, p.y, PENRADIUS, currentcolor);
+    }
+    if (Serial.available()) {
+      while(Serial.read() != -1) {}
+      ctp.showAllRegisters();
     }
 }
