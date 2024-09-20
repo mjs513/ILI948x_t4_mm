@@ -82,11 +82,11 @@ void setup(void) {
 #endif
     Serial.println(ILI9488X_SPEED_MHZ);
 #ifdef ARDUINO_TEENSY41
-    pinMode(24, INPUT_PULLDOWN);
+    pinMode(27, INPUT_PULLDOWN);
     delay(10);  // plenty of time
     // if the user tied this pin to 3.3v then try 16 bit bus...
-    //Serial.printf("Pin 24, %u\n", digitalRead(24));
-    //tft.setBusWidth(digitalRead(24) ? 16 : 8);
+    Serial.printf("Pin 27, %u\n", digitalRead(27));
+    tft.setBusWidth(digitalRead(27) ? 16 : 8);
 #endif
 
     Serial.println("Before tft.begin");
