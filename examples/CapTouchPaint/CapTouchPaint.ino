@@ -15,9 +15,18 @@
 #define ILI9488X_SPEED_MHZ 24
 #define BUS_WIDTH 8
 #define BIT_DEPTH 16
-#define CTP_INT_PIN 22 // 0xff if pin is not connected
 #define ROTATION 3
-//#define SHOW_TOUCH_INFO
+
+#ifdef ARDUINO_TEENSY41
+#define TOUCH_WIRE Wire2
+#define CTP_INT_PIN 26
+
+#else
+#define TOUCH_WIRE Wire
+#define CTP_INT_PIN 22 // 0xff if pin is not connected
+#endif
+
+#define SHOW_TOUCH_INFO
 
 #include <Wire.h>  // this is needed for FT6206
 #include <FT6x36_t4.h>
@@ -76,8 +85,8 @@ void setup(void) {
     pinMode(24, INPUT_PULLDOWN);
     delay(10);  // plenty of time
     // if the user tied this pin to 3.3v then try 16 bit bus...
-    Serial.printf("Pin 24, %u\n", digitalRead(24));
-    tft.setBusWidth(digitalRead(24) ? 16 : 8);
+    //Serial.printf("Pin 24, %u\n", digitalRead(24));
+    //tft.setBusWidth(digitalRead(24) ? 16 : 8);
 #endif
 
     Serial.println("Before tft.begin");
@@ -95,9 +104,9 @@ void setup(void) {
     tft.fillScreen(ILI9488_RED);
 
     Serial.println("\n*** Start Touch controller ***");
-    Wire.begin();
+    TOUCH_WIRE.begin();
 //    if (!ctp.begin(&Wire, 0x38)) {  // Optional pass in which Wire object and device ID
-    if (!ctp.begin()) {  // Use default: Wire and 0x38
+    if (!ctp.begin(&TOUCH_WIRE)) {  // Use default: Wire and 0x38
         Serial.println("Couldn't start FT6236 touchscreen controller");
         while (1) delay(10);
     }
